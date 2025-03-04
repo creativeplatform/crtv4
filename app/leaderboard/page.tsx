@@ -150,7 +150,7 @@ export default function LeaderboardPage() {
                 <FaUsers className="mr-2" />
                 <span>
                   {formatNumber(participantCount)}
-                  Participants
+                  &nbsp;Participants
                 </span>
               </div>
 

@@ -13,7 +13,7 @@ const SECRET_KEY = process.env.ACCESS_KEY_SECRET || 'livepeer-access-key-secret'
  * @param context Context containing token information
  * @returns Access key string or null if generation fails
  */
-export function generateAccessKey(address: string, context: WebhookContext): string | null {
+export async function generateAccessKey(address: string, context: WebhookContext): Promise<string | null> {
   try {
     if (!address || !context.contractAddress || !context.tokenId) {
       console.error('Missing required parameters for access key generation');
@@ -51,7 +51,7 @@ export function generateAccessKey(address: string, context: WebhookContext): str
  * @param context Context containing token information
  * @returns Boolean indicating if the access key is valid
  */
-export function validateAccessKey(accessKey: string, address: string, context: WebhookContext): boolean {
+export async function validateAccessKey(accessKey: string, address: string, context: WebhookContext): Promise<boolean> {
   try {
     // Split the access key into payload and signature
     const [payload, signature] = accessKey.split('.');

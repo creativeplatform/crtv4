@@ -6,7 +6,7 @@ import { Address } from 'viem';
  * @param chars The number of characters to show at the beginning and end
  * @returns The shortened address
  */
-export function shortenAddress(address: string | Address, chars = 4): string {
+export function shortenAddress(address: string | Address | { toString(): string }, chars = 4): string {
   if (!address) return '';
   
   const addressStr = typeof address === 'string' ? address : address.toString();
