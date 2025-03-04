@@ -1,34 +1,108 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { PreviewPlayer } from '../Player/PreviewPlayer';
+import { getFeaturedPlaybackSource } from '@/lib/utils/hooks/useFeaturePlaybackSource';
+import { FEATURED_VIDEO_TITLE } from '@/lib/utils/context';
+import { Src } from '@livepeer/react';
+import { useVideo } from '@/context/VideoContext';
 
 const FeaturedVideo: React.FC = () => {
+  const [playbackSource, setPlaybackSource] = useState<Src[] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { currentPlayingId } = useVideo();
+
+  useEffect(() => {
+    const loadPlaybackSource = async () => {
+      try {
+        const src = await getFeaturedPlaybackSource();
+        setPlaybackSource(src);
+      } catch (err) {
+        setError('Failed to load featured video');
+        console.error('Error loading featured video:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadPlaybackSource();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-7xl py-10">
+        <h2 className="mb-8 text-2xl font-bold">Featured</h2>
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div className="flex items-center justify-center aspect-video bg-gray-900 rounded-lg">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+              <div className="text-lg font-semibold text-white">Loading featured content...</div>
+            </div>
+          </div>
+          <div className="space-y-4 animate-pulse">
+            <div className="h-8 bg-gray-700 rounded w-3/4"></div>
+            <div className="h-20 bg-gray-700 rounded"></div>
+            <div className="space-y-2">
+              <div className="h-4 bg-gray-700 rounded w-1/2"></div>
+              <div className="h-4 bg-gray-700 rounded w-3/4"></div>
+              <div className="h-4 bg-gray-700 rounded w-2/3"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !playbackSource || playbackSource.length === 0) {
+    return (
+      <div className="mx-auto max-w-7xl py-10">
+        <h2 className="mb-8 text-2xl font-bold">Featured</h2>
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div className="flex items-center justify-center aspect-video bg-gray-900 rounded-lg">
+            <div className="text-center">
+              <h3 className="text-xl font-medium text-white">Unable to load featured content</h3>
+              <p className="mt-2 text-gray-400">Please try again later</p>
+            </div>
+          </div>
+          <div className="space-y-4">
+            <h3 className="text-xl font-medium">{FEATURED_VIDEO_TITLE}</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Experience the future of creative content. Watch how creators are leveraging Web3 
+              technology to build sustainable careers and connect with their audience in new ways.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-7xl py-10">
       <h2 className="mb-8 text-2xl font-bold">Featured</h2>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <div className="overflow-hidden rounded-lg bg-gray-100 shadow-md transition-all hover:shadow-lg dark:bg-gray-800">
-          <div className="aspect-video w-full bg-gray-200 dark:bg-gray-700"></div>
-          <div className="p-4">
-            <h3 className="mb-2 text-xl font-medium">Featured Video Title</h3>
-            <p className="text-sm text-gray-500">Featured Creator</p>
-            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-              This is a featured video description that highlights why this content is special and why
-              viewers should watch it.
-            </p>
-          </div>
+        <div className="overflow-hidden rounded-lg bg-gray-900 shadow-md transition-all hover:shadow-lg">
+          <PreviewPlayer
+            src={playbackSource}
+            title={FEATURED_VIDEO_TITLE}
+          />
         </div>
         <div className="space-y-4">
-          <h3 className="text-lg font-medium">Why Watch</h3>
-          <ul className="list-inside list-disc space-y-2">
-            <li>Exclusive content from top creators</li>
-            <li>High-quality production value</li>
-            <li>Trending topics and discussions</li>
-            <li>Community-recommended content</li>
-          </ul>
-          <button className="mt-4 rounded-full bg-orange-500 px-6 py-2 text-white transition hover:bg-orange-600">
-            Watch Now
-          </button>
+          <h3 className="text-xl font-medium">{FEATURED_VIDEO_TITLE}</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Join us for another exciting episode of The Creative Podcast where we explore 
+            the intersection of creativity and technology. In this episode, we dive deep into 
+            how creators are leveraging Web3 to build sustainable careers.
+          </p>
+          <div className="mt-6">
+            <h4 className="text-lg font-medium mb-4">Episode Highlights</h4>
+            <ul className="list-inside list-disc space-y-2">
+              <li>The evolution of creative platforms</li>
+              <li>How Web3 is changing content monetization</li>
+              <li>Building direct creator-audience relationships</li>
+              <li>The future of decentralized media</li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>

@@ -300,11 +300,11 @@ export default function Navbar() {
               <Link href="/" className={navLinkClass}>
                 Home
               </Link>
-              <Link href="/about" className={navLinkClass}>
-                About
+              <Link href="/discover" className={navLinkClass}>
+                Discover
               </Link>
-              <Link href="/contact" className={navLinkClass}>
-                Contact
+              <Link href="/leaderboard" className={navLinkClass}>
+                Leaderboard
               </Link>
               <Link href="/vote" prefetch={false} className={navLinkClass}>
                 Vote
@@ -514,18 +514,18 @@ export default function Navbar() {
                     Home
                   </Link>
                   <Link
-                    href="/about"
+                    href="/discover"
                     className={mobileNavLinkClass}
                     onClick={handleLinkClick}
                   >
-                    About
+                    Discover
                   </Link>
                   <Link
-                    href="/contact"
+                    href="/leaderboard"
                     className={mobileNavLinkClass}
                     onClick={handleLinkClick}
                   >
-                    Contact
+                    Leaderboard
                   </Link>
                   <Link
                     href="/vote"

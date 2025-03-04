@@ -12,7 +12,7 @@ export const HERO_NAME = {
   bottom: "Use Everywhere!",
 };
 
-export const HERO_DESCRIPTION = 
+export const HERO_DESCRIPTION =
   `${SITE_NAME} is a decentralized live-streaming platform that puts you in control of your content and earnings. ` +
   `Get paid 100% of streaming revenue, have access to your own social token, and monetize your content into NFTs.`;
 
@@ -28,6 +28,10 @@ export const HERO_BUTTONS = {
 };
 
 export const HERO_VIDEO_TITLE = "Creative TV Demo";
+
+// FEATURED VIDEO
+export const FEATURED_VIDEO_TITLE = "The Creative Podcast Episode 03";
+export const LIVEPEER_FEATURED_PLAYBACK_ID = "5c2bzf537qbq0r7o";
 
 // Livepeer constants
 export const LIVEPEER_HERO_PLAYBACK_ID = "cbd1dw72qst9xmps"; // Default playback ID for hero section video
