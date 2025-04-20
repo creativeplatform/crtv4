@@ -28,11 +28,11 @@ const uiConfig: AlchemyAccountsUIConfig = {
   auth: {
     sections: [
       [{ type: "email", emailMode: "otp" }],
-      // [
-      //   { type: "passkey" },
-      //   { type: "social", authProviderId: "google", mode: "popup" },
-      //   { type: "social", authProviderId: "facebook", mode: "popup" },
-      // ],
+      [
+        { type: "passkey" },
+        { type: "social", authProviderId: "google", mode: "popup" },
+        { type: "social", authProviderId: "facebook", mode: "popup" },
+      ],
       [
         {
           type: "external_wallets",
@@ -42,7 +42,7 @@ const uiConfig: AlchemyAccountsUIConfig = {
         },
       ],
     ],
-    addPasskeyOnSignup: false,
+    addPasskeyOnSignup: true,
     header: React.createElement(Image, {
       src: SITE_TOPIC_LOGO,
       alt: "Site Logo",
