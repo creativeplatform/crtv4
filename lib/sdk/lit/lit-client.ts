@@ -9,7 +9,7 @@ let connectionPromise: Promise<LitJsSdk.LitNodeClient> | null = null;
 interface LitClientError extends Error {
   code?: string;
   message: string;
-  kind?: LIT_ERROR_KIND;
+  kind?: typeof LIT_ERROR_KIND;
 }
 
 async function initializeLitClient() {
