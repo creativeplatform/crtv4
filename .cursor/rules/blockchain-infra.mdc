@@ -1,0 +1,12 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# Blockchain Infra
+
+- Use only Viem.sh.
+- Use only Account-Kit.
+- Never use Wagmi or its SDK.
+- Ask questions on where you can get more information on a function that you don't truely know if it exits.
