@@ -38,10 +38,21 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { CheckIcon } from "@radix-ui/react-icons";
-import { CopyIcon } from "lucide-react";
-import type { User } from "@account-kit/signer";
+import {
+  Copy,
+  User,
+  Plus,
+  ArrowUpRight,
+  ArrowUpDown,
+  LogOut,
+} from "lucide-react";
+import type { User as AccountUser } from "@account-kit/signer";
 import useModularAccount from "@/lib/hooks/useModularAccount";
-type UseUserResult = (User & { type: "eoa" | "sca" }) | null;
+import { createPublicClient, http } from "viem";
+import { mainnet } from "viem/chains";
+import { LitProtocolStatus } from "./LitProtocolStatus";
+
+type UseUserResult = (AccountUser & { type: "eoa" | "sca" }) | null;
 
 // Define reusable className for nav links
 const navLinkClass = `
@@ -61,11 +72,22 @@ const mobileNavLinkClass = `
   hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors
 `;
 
-// Helper function to truncate Ethereum addresses
-const truncateAddress = (address: string) => {
+// Update the truncateAddress helper function
+const truncateAddress = async (address: string, publicClient: any) => {
   if (!address) return "";
-  if (address.endsWith(".eth")) return address;
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  try {
+    // Try to get ENS name first
+    const ensName = await publicClient.getEnsName({
+      address: address as `0x${string}`,
+      universalResolverAddress: "0x74E20Bd2A1fE0cdbe45b9A1d89cb7e0a45b36376",
+    });
+    if (ensName) return ensName;
+    // If no ENS name, truncate the address
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  } catch (error) {
+    console.error("Error resolving ENS name:", error);
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  }
 };
 
 export default function Navbar() {
@@ -74,6 +96,26 @@ export default function Navbar() {
   const { logout } = useLogout();
   const { chain: currentChain, setChain, isSettingChain } = useChain();
   const { account: modularAccount } = useModularAccount();
+  const [displayAddress, setDisplayAddress] = useState<string>("");
+
+  // Initialize Viem public client for ENS resolution
+  const publicClient = createPublicClient({
+    chain: mainnet,
+    transport: http(
+      `https://eth-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`
+    ),
+  });
+
+  // Update display address when user changes
+  useEffect(() => {
+    async function updateDisplayAddress() {
+      if (user?.address) {
+        const resolved = await truncateAddress(user.address, publicClient);
+        setDisplayAddress(resolved);
+      }
+    }
+    updateDisplayAddress();
+  }, [user?.address, publicClient]);
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -105,21 +147,25 @@ export default function Navbar() {
     setIsMenuOpen(false);
   };
 
-  // Get the user's address from user object
-  const userAddress = user?.address || "thecreative.eth";
-  const displayAddress = userAddress.endsWith(".eth")
-    ? userAddress
-    : truncateAddress(userAddress);
-
   const handleActionClick = (action: "buy" | "send" | "swap") => {
     setDialogAction(action);
     setIsDialogOpen(true);
   };
 
   const copyToClipboard = async () => {
-    if (userAddress) {
+    if (user?.address) {
       try {
-        await navigator.clipboard.writeText(userAddress);
+        // Try to get ENS name first
+        const ensName = await publicClient.getEnsName({
+          address: user.address as `0x${string}`,
+          universalResolverAddress:
+            "0x74E20Bd2A1fE0cdbe45b9A1d89cb7e0a45b36376",
+        });
+
+        // Copy ENS name if available, otherwise copy address
+        const textToCopy = ensName || user.address;
+        await navigator.clipboard.writeText(textToCopy);
+
         setCopySuccess(true);
         toast.success("Address copied to clipboard!");
         setTimeout(() => setCopySuccess(false), 2000);
@@ -397,10 +443,10 @@ export default function Navbar() {
                           className="h-6 w-6 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 
                           mr-2 flex items-center justify-center text-white"
                         >
-                          <UserIcon className="h-4 w-4" />
+                          <User className="h-4 w-4" />
                         </div>
                         <span className="max-w-[100px] truncate">
-                          {displayAddress}
+                          {displayAddress || "Loading..."}
                         </span>
                       </Button>
                     </DropdownMenuTrigger>
@@ -419,23 +465,25 @@ export default function Navbar() {
                         {copySuccess ? (
                           <CheckIcon className="ml-2 h-4 w-4 text-green-500" />
                         ) : (
-                          <CopyIcon className="ml-2 h-4 w-4" />
+                          <Copy className="ml-2 h-4 w-4" />
                         )}
                       </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <LitProtocolStatus />
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onClick={() => handleActionClick("buy")}
                         className="flex items-center cursor-pointer hover:bg-gray-100 
                           dark:hover:bg-gray-800 transition-colors"
                       >
-                        <PlusIcon className="mr-2 h-4 w-4 text-green-500" /> Buy
+                        <Plus className="mr-2 h-4 w-4 text-green-500" /> Buy
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => handleActionClick("send")}
                         className="flex items-center cursor-pointer hover:bg-gray-100 
                           dark:hover:bg-gray-800 transition-colors"
                       >
-                        <ArrowUpRightIcon className="mr-2 h-4 w-4 text-blue-500" />{" "}
+                        <ArrowUpRight className="mr-2 h-4 w-4 text-blue-500" />{" "}
                         Send
                       </DropdownMenuItem>
                       <DropdownMenuItem
@@ -443,7 +491,7 @@ export default function Navbar() {
                         className="flex items-center cursor-pointer hover:bg-gray-100 
                           dark:hover:bg-gray-800 transition-colors"
                       >
-                        <ArrowsUpDownIcon className="mr-2 h-4 w-4 text-purple-500" />{" "}
+                        <ArrowUpDown className="mr-2 h-4 w-4 text-purple-500" />{" "}
                         Swap
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
@@ -452,8 +500,7 @@ export default function Navbar() {
                         className="flex items-center cursor-pointer hover:bg-gray-100 
                           dark:hover:bg-gray-800 transition-colors"
                       >
-                        <LogOutIcon className="mr-2 h-4 w-4 text-red-500" />{" "}
-                        Logout
+                        <LogOut className="mr-2 h-4 w-4 text-red-500" /> Logout
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -552,27 +599,6 @@ export default function Navbar() {
 function MenuIcon(props: any) {
   return (
     <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      strokeWidth={1.5}
-      stroke="currentColor"
-      className="h-5 w-5"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
-      />
-    </svg>
-  );
-}
-
-function UserIcon(props: any) {
-  return (
-    <svg
-      {...props}
       xmlns="http://www.w3.org/2000/svg"
       width="24"
       height="24"
@@ -582,92 +608,12 @@ function UserIcon(props: any) {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-    >
-      <circle cx="12" cy="8" r="5" />
-      <path d="M20 21a8 8 0 1 0-16 0" />
-    </svg>
-  );
-}
-
-function PlusIcon(props: any) {
-  return (
-    <svg
+      className="h-6 w-6"
       {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
     >
-      <path d="M5 12h14" />
-      <path d="M12 5v14" />
-    </svg>
-  );
-}
-
-function ArrowUpRightIcon(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M7 17V7h10" />
-      <path d="M7 7l10 10" />
-    </svg>
-  );
-}
-
-function ArrowsUpDownIcon(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="m21 16-4 4-4-4" />
-      <path d="M17 20V4" />
-      <path d="m3 8 4-4 4 4" />
-      <path d="M7 4v16" />
-    </svg>
-  );
-}
-
-function LogOutIcon(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-      <polyline points="16 17 21 12 16 7" />
-      <line x1="21" y1="12" x2="9" y2="12" />
+      <line x1="4" x2="20" y1="12" y2="12" />
+      <line x1="4" x2="20" y1="6" y2="6" />
+      <line x1="4" x2="20" y1="18" y2="18" />
     </svg>
   );
 }

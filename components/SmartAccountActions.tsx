@@ -303,7 +303,8 @@ function SignTypedDataTab({ client }: { client: any }) {
       name: "Creative TV",
       version: "1",
       chainId: 84532, // Base Sepolia
-      verifyingContract: "0x00000000000017c61b5bEe81050EC8eFc9c6fecd" as `0x${string}`, // ModularAccount factory on Base Sepolia
+      verifyingContract:
+        "0x00000000000017c61b5bEe81050EC8eFc9c6fecd" as `0x${string}`, // ModularAccount factory on Base Sepolia
     },
     types: {
       Person: [

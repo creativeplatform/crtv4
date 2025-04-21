@@ -1,6 +1,6 @@
 "use client";
 import * as Player from "@livepeer/react/player";
-import { Src, HLSVideoSource, MP4VideoSource } from "@livepeer/react";
+import { Src } from "@livepeer/react";
 import {
   PlayIcon,
   PauseIcon,
@@ -11,7 +11,7 @@ import {
 } from "@livepeer/react/assets";
 import { useEffect, useState, useRef } from "react";
 import "./Player.css";
-import { ViewsComponent } from './ViewsComponent';
+import { ViewsComponent } from "./ViewsComponent";
 
 export const PreviewPlayer: React.FC<{ src: Src[]; title: string }> = ({
   src,
@@ -23,39 +23,39 @@ export const PreviewPlayer: React.FC<{ src: Src[]; title: string }> = ({
 
   // Extract playback ID from the source
   const getPlaybackId = (sources: Src[]): string => {
-    if (!sources.length) return '';
-    
+    if (!sources.length) return "";
+
     const source = sources[0] as unknown;
-    
+
     if (isHLSSource(source)) {
-      const hrnParts = source.hrn.split(':');
+      const hrnParts = source.hrn.split(":");
       return hrnParts[hrnParts.length - 1];
     }
-    
+
     if (isMP4Source(source)) {
-      const urlParts = source.src.split('/');
-      return urlParts[urlParts.length - 1].split('.')[0];
+      const urlParts = source.src.split("/");
+      return urlParts[urlParts.length - 1].split(".")[0];
     }
-    
-    return '';
+
+    return "";
   };
 
   // Type guards for source types
   const isHLSSource = (source: unknown): source is HLSVideoSource => {
-    if (!source || typeof source !== 'object') return false;
+    if (!source || typeof source !== "object") return false;
     return (
-      'hrn' in source &&
-      'type' in source &&
-      (source as { type: string }).type === 'hls'
+      "hrn" in source &&
+      "type" in source &&
+      (source as { type: string }).type === "hls"
     );
   };
 
   const isMP4Source = (source: unknown): source is MP4VideoSource => {
-    if (!source || typeof source !== 'object') return false;
+    if (!source || typeof source !== "object") return false;
     return (
-      'src' in source &&
-      'type' in source &&
-      (source as { type: string }).type === 'mp4'
+      "src" in source &&
+      "type" in source &&
+      (source as { type: string }).type === "mp4"
     );
   };
 
@@ -172,3 +172,13 @@ export const PreviewPlayer: React.FC<{ src: Src[]; title: string }> = ({
     </div>
   );
 };
+
+interface HLSVideoSource {
+  type: "hls";
+  hrn: string;
+}
+
+interface MP4VideoSource {
+  type: "mp4";
+  src: string;
+}

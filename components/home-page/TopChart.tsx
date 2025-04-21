@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Avatar, AvatarImage } from "../ui/avatar";
 import makeBlockie from "ethereum-blockies-base64";
 import { shortenAddress, formatNumber } from "@/lib/utils/utils";
-import { stack } from "@/lib/sdk/stack/client";
+import { stack } from "@/lib/sdk/stack/stackClient";
 import { Button } from "../ui/button";
 import { FaSpinner, FaTrophy } from "react-icons/fa";
 import Link from "next/link";
@@ -36,30 +36,46 @@ interface UserRank {
 
 export const AddressDisplay = ({ address }: { address: Address }) => {
   const [displayName, setDisplayName] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const resolveEnsName = async () => {
       try {
         const publicClient = createPublicClient({
           chain: mainnet,
-          transport: http(),
+          transport: http(
+            `https://eth-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`
+          ),
         });
-        const ensName = await publicClient.getEnsName({ address });
+
+        const ensName = await publicClient.getEnsName({
+          address,
+          universalResolverAddress:
+            "0x74E20Bd2A1fE0cdbe45b9A1d89cb7e0a45b36376",
+        });
+
         setDisplayName(ensName);
       } catch (error) {
         console.error("Error resolving ENS name:", error);
         setDisplayName(null);
+      } finally {
+        setIsLoading(false);
       }
     };
     resolveEnsName();
   }, [address]);
 
+  if (isLoading)
+    return (
+      <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-4 w-24 rounded"></div>
+    );
+
   return (
-    <div>
+    <div className="flex items-center gap-2">
       {displayName ? (
-        <p className="text-left">{displayName}</p>
+        <p className="text-left font-medium">{displayName}</p>
       ) : (
-        <p className="text-left">{shortenAddress(address)}</p>
+        <p className="text-left font-mono">{shortenAddress(address)}</p>
       )}
     </div>
   );

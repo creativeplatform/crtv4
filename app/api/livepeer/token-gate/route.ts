@@ -1,6 +1,6 @@
-'use server';
+"use server";
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
 import {
   createPublicClient,
   http,
@@ -8,29 +8,27 @@ import {
   getContract,
   PublicClient,
   parseAbiItem,
-} from 'viem';
-import {
-  base,
-  baseSepolia,
-  optimism,
-  polygon,
-  Chain,
-} from 'viem/chains';
+} from "viem";
+import { base, baseSepolia, optimism, polygon, Chain } from "viem/chains";
 
-import { generateAccessKey, validateAccessKey } from '../../../../lib/access-key';
-import { getJwtContext } from '../../auth/thirdweb/authentication';
+import {
+  generateAccessKey,
+  validateAccessKey,
+} from "../../../../lib/access-key";
+import { getSmartAccountClient } from "@account-kit/core";
+import { config } from "@/config";
 
 // Import ERC1155 ABI
 const erc1155ABI = [
   {
     inputs: [
-      { name: '_owner', type: 'address' },
-      { name: '_id', type: 'uint256' },
+      { name: "_owner", type: "address" },
+      { name: "_id", type: "uint256" },
     ],
-    name: 'balanceOf',
-    outputs: [{ name: '', type: 'uint256' }],
-    stateMutability: 'view',
-    type: 'function',
+    name: "balanceOf",
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
   },
 ];
 
@@ -72,7 +70,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           allowed: false,
-          message: 'Bad request, missing required fields',
+          message: "Bad request, missing required fields",
         },
         { status: 400 }
       );
@@ -86,7 +84,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           allowed: false,
-          message: 'Request timestamp too old or from future',
+          message: "Request timestamp too old or from future",
         },
         { status: 400 }
       );
@@ -101,7 +99,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           allowed: true,
-          message: 'Access granted',
+          message: "Access granted",
         },
         { status: 200 }
       );
@@ -109,17 +107,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           allowed: false,
-          message: 'Access denied',
+          message: "Access denied",
         },
         { status: 403 }
       );
     }
   } catch (error) {
-    console.error('Access control error:', error);
+    console.error("Access control error:", error);
     return NextResponse.json(
       {
         allowed: false,
-        message: 'Internal server error',
+        message: "Internal server error",
       },
       { status: 500 }
     );
@@ -128,15 +126,15 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const address = request.nextUrl.searchParams.get('address') as string;
+    const address = request.nextUrl.searchParams.get("address") as string;
     const creatorAddress = request.nextUrl.searchParams.get(
-      'creatorAddress'
+      "creatorAddress"
     ) as string;
-    const tokenId = request.nextUrl.searchParams.get('tokenId') as string;
+    const tokenId = request.nextUrl.searchParams.get("tokenId") as string;
     const contractAddress = request.nextUrl.searchParams.get(
-      'contractAddress'
+      "contractAddress"
     ) as string;
-    const chain = parseInt(request.nextUrl.searchParams.get('chain') as string);
+    const chain = parseInt(request.nextUrl.searchParams.get("chain") as string);
 
     console.log({
       address,
@@ -150,7 +148,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         {
           allowed: false,
-          message: 'Bad request, missing required fields',
+          message: "Bad request, missing required fields",
         },
         { status: 400 }
       );
@@ -177,17 +175,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         {
           allowed: false,
-          message: 'Failed to generate access key.',
+          message: "Failed to generate access key.",
         },
         { status: 400 }
       );
     }
   } catch (error) {
-    console.error('Generate access key error:', error);
+    console.error("Generate access key error:", error);
     return NextResponse.json(
       {
         allowed: false,
-        message: 'Internal server error',
+        message: "Internal server error",
       },
       { status: 500 }
     );
@@ -197,44 +195,41 @@ export async function GET(request: NextRequest) {
 async function validateAccess(payload: WebhookPayload): Promise<boolean> {
   const { accessKey, context, timestamp } = payload;
 
-  const { address } = await getJwtContext();
+  try {
+    // Get the smart account client
+    const client = await getSmartAccountClient(
+      {
+        type: "ModularAccountV2",
+        accountParams: {
+          mode: "default",
+        },
+      },
+      config
+    );
 
-  console.log({ address });
+    if (!client || !client.address) return false;
 
-  // 1. Validate WebhookContext
-  if (
-    !address ||
-    !context.creatorAddress ||
-    !context.tokenId ||
-    !context.contractAddress ||
-    !context.chain
-  ) {
-    console.error({ address, context });
+    // Validate the access key
+    const isValidKey = await validateAccessKey(
+      accessKey,
+      client.address,
+      context
+    );
+    if (!isValidKey) return false;
+
+    // Check if user has required token balance
+    const hasTokens = await checkUserTokenBalances(client.address, context);
+    if (!hasTokens) return false;
+
+    // Check if the asset is accessible
+    const isAccessible = await checkAssetAccessibility(context);
+    if (!isAccessible) return false;
+
+    return true;
+  } catch (error) {
+    console.error("Validate access error:", error);
     return false;
   }
-
-  // 2. Validate access key
-  const isAccessKeyValid = validateAccessKey(accessKey, address, context);
-  console.log({ isAccessKeyValid });
-  if (!isAccessKeyValid) {
-    return false;
-  }
-
-  // 3. Check user-specific conditions
-  const userHasToken = await checkUserTokenBalances(address, context);
-  console.log({ userHasToken });
-  if (!userHasToken) {
-    return false;
-  }
-
-  // 4. Asset or stream-specific checks
-  // const isAssetAccessible = await checkAssetAccessibility(context);
-  // console.log({ isAssetAccessible });
-  // if (!isAssetAccessible) {
-  //   return false;
-  // }
-
-  return true;
 }
 
 async function checkUserTokenBalances(
@@ -247,7 +242,7 @@ async function checkUserTokenBalances(
 
     // If the chain is not supported, return false
     if (!chain) {
-      console.error('Chain not supported');
+      console.error("Chain not supported");
       return false;
     }
 
@@ -258,18 +253,18 @@ async function checkUserTokenBalances(
     });
 
     // Check the user token balance
-    const videoTokenBalance = await publicClient.readContract({
+    const videoTokenBalance = (await publicClient.readContract({
       address: context.contractAddress as Address,
       abi: erc1155ABI,
-      functionName: 'balanceOf',
+      functionName: "balanceOf",
       args: [address as Address, BigInt(context.tokenId)],
-    }) as bigint;
+    })) as bigint;
 
     console.log({ videoTokenBalance });
 
     return videoTokenBalance > BigInt(0);
   } catch (error) {
-    console.error('Error checking token balances...', error);
+    console.error("Error checking token balances...", error);
     return false;
   }
 }
