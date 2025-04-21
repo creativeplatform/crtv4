@@ -61,23 +61,26 @@ const accountFactoryAddresses = chains.reduce((acc, chain) => {
   return acc;
 }, {} as Record<number, string>);
 
-// Format chains for the config
-const formattedChains = chains.map((chain) => ({
-  chain,
-}));
+// Create the query client
+export const queryClient = new QueryClient();
 
+// Create the transport with ENS configuration
+const transport = alchemy({
+  apiKey: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY as string,
+});
+
+// Create the Account Kit config
 export const config = createConfig(
   {
-    transport: alchemy({
-      apiKey: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY as string,
-    }),
-    chains: formattedChains,
+    transport,
+    chains: chains.map((chain) => ({
+      chain,
+      transport,
+    })),
     chain: defaultChain,
-    ssr: true, // more about ssr: https://accountkit.alchemy.com/react/ssr
-    storage: cookieStorage, // more about persisting state with cookies: https://accountkit.alchemy.com/react/ssr#persisting-the-account-state
-    enablePopupOauth: true, // must be set to "true" if you plan on using popup rather than redirect in the social login flow
+    ssr: true,
+    storage: cookieStorage,
+    enablePopupOauth: true,
   },
   uiConfig
 );
-
-export const queryClient = new QueryClient();
