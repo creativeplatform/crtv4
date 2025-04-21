@@ -50,7 +50,9 @@ import type { User as AccountUser } from "@account-kit/signer";
 import useModularAccount from "@/lib/hooks/useModularAccount";
 import { createPublicClient, http } from "viem";
 import { mainnet } from "viem/chains";
+import { ArrowBigDown, ArrowBigUp } from "lucide-react";
 import { LitProtocolStatus } from "./LitProtocolStatus";
+import WertButton from "./wallet/buy/buy-button";
 
 type UseUserResult = (AccountUser & { type: "eoa" | "sca" }) | null;
 
@@ -97,6 +99,7 @@ export default function Navbar() {
   const { chain: currentChain, setChain, isSettingChain } = useChain();
   const { account: modularAccount } = useModularAccount();
   const [displayAddress, setDisplayAddress] = useState<string>("");
+  const [isArrowUp, setIsArrowUp] = useState(true);
 
   // Initialize Viem public client for ENS resolution
   const publicClient = createPublicClient({
@@ -207,6 +210,7 @@ export default function Navbar() {
           <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
             <h2 className="text-xl font-bold mb-4">Buy Crypto</h2>
             <p className="mb-4">Purchase crypto directly to your wallet.</p>
+            <WertButton onClose={() => setIsDialogOpen(false)} />
             <div className="flex justify-end">
               <Button onClick={() => setIsDialogOpen(false)}>Close</Button>
             </div>
@@ -259,25 +263,16 @@ export default function Navbar() {
                 />
               </div>
               <div className="flex justify-center">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-6 w-6"
+                <button
+                  onClick={() => setIsArrowUp(!isArrowUp)}
+                  className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 >
-                  <path d="M7 10v12" />
-                  <path d="M15 10v12" />
-                  <path d="M11 14v8" />
-                  <path d="M11 2v8" />
-                  <path d="m3 6 4-4 4 4" />
-                  <path d="m17 6 4-4 4 4" />
-                </svg>
+                  {isArrowUp ? (
+                    <ArrowBigUp className="h-6 w-6" />
+                  ) : (
+                    <ArrowBigDown className="h-6 w-6" />
+                  )}
+                </button>
               </div>
               <div className="flex items-center gap-2">
                 <select className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600">
@@ -359,22 +354,24 @@ export default function Navbar() {
           </div>
 
           {/* Mobile menu button */}
-          <button
-            className={
-              "md:hidden inline-flex items-center justify-center rounded-md p-2 " +
-              "text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 " +
-              "dark:hover:bg-gray-800 dark:hover:text-gray-50 transition-colors"
-            }
-            onClick={() => {
-              setIsMenuOpen(!isMenuOpen);
-            }}
-            aria-expanded={isMenuOpen}
-          >
-            <span className="sr-only">Open main menu</span>
-            <MenuIcon className="h-6 w-6" />
-          </button>
+          <div className="flex md:hidden items-center">
+            <ThemeToggleComponent />
+            <button
+              className={
+                "ml-2 inline-flex items-center justify-center rounded-md p-2 " +
+                "text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 " +
+                "dark:hover:bg-gray-800 dark:hover:text-gray-50 transition-colors"
+              }
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              aria-expanded={isMenuOpen}
+            >
+              <span className="sr-only">Open main menu</span>
+              <MenuIcon className="h-6 w-6" />
+            </button>
+          </div>
 
-          <div className="flex items-center space-x-4">
+          {/* Desktop wallet display */}
+          <div className="hidden md:flex items-center space-x-4">
             <div className="flex items-center">
               <ThemeToggleComponent />
             </div>
@@ -388,7 +385,14 @@ export default function Navbar() {
                         className="flex gap-2 items-center transition-all hover:bg-gray-100 
                           dark:hover:bg-gray-800 hover:border-blue-500"
                       >
-                        <div className="w-4 h-4 rounded-full bg-gradient-to-r from-blue-500 to-purple-500"></div>
+                        <div
+                          className={`
+                            h-8 w-8 rounded-full flex items-center justify-center text-white
+                            bg-gradient-to-r from-blue-500 to-purple-500
+                          `}
+                        >
+                          <User className="h-4 w-4" />
+                        </div>
                         <span>
                           {chainNames[currentChain.id] || currentChain.name}
                         </span>
@@ -440,8 +444,10 @@ export default function Navbar() {
                           dark:hover:bg-gray-800 hover:border-blue-500"
                       >
                         <div
-                          className="h-6 w-6 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 
-                          mr-2 flex items-center justify-center text-white"
+                          className={`
+                            h-8 w-8 rounded-full flex items-center justify-center text-white
+                            bg-gradient-to-r from-blue-500 to-purple-500
+                          `}
                         >
                           <User className="h-4 w-4" />
                         </div>
@@ -523,35 +529,122 @@ export default function Navbar() {
             <div
               className={
                 "fixed inset-0 top-16 z-50 grid h-[calc(100vh-4rem)] grid-flow-row " +
-                "auto-rows-max overflow-auto p-6 pb-32 shadow-md animate-in " +
-                "slide-in-from-top-5 md:hidden"
+                "auto-rows-max overflow-auto p-4 pb-32 shadow-md animate-in " +
+                "slide-in-from-top-5 md:hidden bg-white dark:bg-gray-900"
               }
             >
               <div
                 className={
-                  "relative z-20 grid gap-6 rounded-md bg-white dark:bg-gray-900 " +
-                  "p-4 text-popover-foreground shadow-md border border-gray-200 " +
-                  "dark:border-gray-800"
+                  "relative z-20 grid gap-4 rounded-md " +
+                  "text-popover-foreground"
                 }
               >
-                <Link
-                  href="/"
-                  className="flex items-center space-x-2 transition-transform duration-200 hover:scale-105"
-                  onClick={handleLinkClick}
-                >
-                  <Image
-                    src={SITE_LOGO}
-                    alt={SITE_NAME}
-                    width={30}
-                    height={30}
-                    priority
-                    style={{ width: "30px", height: "30px" }}
-                    className="rounded-md"
-                  />
-                  <span className="font-bold text-lg bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                    {chainNames[currentChain.id] || currentChain.name}
-                  </span>
-                </Link>
+                {/* User Account Section for Mobile */}
+                {user ? (
+                  <div className="space-y-4 border-b border-gray-200 dark:border-gray-700 pb-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <div
+                          className={`
+                            h-8 w-8 rounded-full flex items-center justify-center text-white
+                            bg-gradient-to-r from-blue-500 to-purple-500
+                          `}
+                        >
+                          <User className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">
+                            {displayAddress}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {chainNames[currentChain.id] || currentChain.name}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={copyToClipboard}
+                        className="h-8 w-8 p-0"
+                      >
+                        {copySuccess ? (
+                          <CheckIcon className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          handleActionClick("buy");
+                          setIsMenuOpen(false);
+                        }}
+                        className="flex items-center justify-center"
+                      >
+                        <Plus className="mr-2 h-4 w-4 text-green-500" />
+                        Buy
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          handleActionClick("send");
+                          setIsMenuOpen(false);
+                        }}
+                        className="flex items-center justify-center"
+                      >
+                        <ArrowUpRight className="mr-2 h-4 w-4 text-blue-500" />
+                        Send
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          handleActionClick("swap");
+                          setIsMenuOpen(false);
+                        }}
+                        className="flex items-center justify-center"
+                      >
+                        <ArrowUpDown className="mr-2 h-4 w-4 text-purple-500" />
+                        Swap
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          logout();
+                          setIsMenuOpen(false);
+                        }}
+                        className="flex items-center justify-center text-red-500"
+                      >
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Logout
+                      </Button>
+                    </div>
+
+                    <div className="pt-2">
+                      <LitProtocolStatus />
+                    </div>
+                  </div>
+                ) : (
+                  <Button
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 
+                      hover:from-blue-700 hover:to-purple-700 text-white 
+                      transition-all duration-300 hover:shadow-lg"
+                    onClick={() => {
+                      openAuthModal();
+                      setIsMenuOpen(false);
+                    }}
+                  >
+                    Login
+                  </Button>
+                )}
+
+                {/* Navigation Links */}
                 <nav className="grid grid-flow-row gap-2 auto-rows-max text-sm">
                   <Link
                     href="/"
