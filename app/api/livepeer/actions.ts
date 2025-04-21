@@ -13,7 +13,7 @@ export const fetchAllAssets = async (): Promise<Asset[]> => {
     return assets.data as Asset[];
   } catch (error) {
     console.error('Error fetching assets:', error);
-    return [];
+    throw new Error(`Failed to fetch assets: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
 
