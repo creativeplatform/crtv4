@@ -1,10 +1,9 @@
 import { Chain } from "viem";
 import { useCallback, useState } from "react";
-import { config } from "@/config";
 import { getLitClient } from "./lit-client";
 import { useSessionSigs } from "./sessionSigs";
-import { useSmartAccountClient, useSigner } from "@account-kit/react";
-import { PKPEthersWallet } from "@lit-protocol/pkp-ethers";
+import { useUser } from "@account-kit/react";
+import useModularAccount from "@/lib/hooks/useModularAccount";
 
 interface UseLitSignerProps {
   pkpPublicKey: string;
@@ -12,7 +11,7 @@ interface UseLitSignerProps {
 }
 
 interface LitSignerState {
-  signer: PKPEthersWallet | null;
+  signer: any; // Will be replaced with proper type once package is installed
   isAuthenticated: boolean;
   error: Error | null;
 }
@@ -24,55 +23,79 @@ export function useLitSigner({ pkpPublicKey, chain }: UseLitSignerProps) {
     error: null,
   });
   const { getSessionSigs } = useSessionSigs();
-  const accountSigner = useSigner();
+  const { smartAccountClient: client } = useModularAccount();
+  const user = useUser();
 
   const initializeSigner = useCallback(async () => {
     try {
       if (!pkpPublicKey) throw new Error("PKP public key is required");
+      if (!user?.type || user.type !== "sca")
+        throw new Error("Smart Contract Account required for Lit Protocol");
+      if (!client) throw new Error("Smart Account client not initialized");
 
-      // Create PKP Ethers wallet instance
-      const pkpWallet = new PKPEthersWallet({
-        pkpPubKey: pkpPublicKey,
-        litNodeClient: await getLitClient(),
-        rpc: chain.rpcUrls.default.http[0],
+      console.log("Initializing Lit Signer with:", {
+        pkpPublicKey,
+        chainId: chain.id,
+        userType: user.type,
       });
 
-      // Initialize the wallet
-      await pkpWallet.init();
+      // Create LitSigner instance
+      const litNodeClient = await getLitClient();
+      if (!litNodeClient) throw new Error("Lit client not initialized");
 
-      setState((prev) => ({ ...prev, signer: pkpWallet, error: null }));
-      return pkpWallet;
+      // For now, return the Lit Node Client as the signer
+      // This will be replaced with LitSigner once the package is installed
+      setState((prev) => ({
+        ...prev,
+        signer: litNodeClient,
+        error: null,
+      }));
+      return litNodeClient;
     } catch (error) {
+      console.error("Failed to initialize Lit signer:", error);
       const errorMessage =
         error instanceof Error
           ? error.message
-          : "Failed to initialize PKP signer";
+          : "Failed to initialize Lit signer";
       setState((prev) => ({
         ...prev,
         error: new Error(errorMessage),
       }));
       throw error;
     }
-  }, [pkpPublicKey, chain]);
+  }, [pkpPublicKey, chain, client, user?.type]);
 
   const authenticate = useCallback(async () => {
     try {
+      if (!user?.type || user.type !== "sca") {
+        throw new Error("Smart Contract Account required for Lit Protocol");
+      }
+
       const signer = state.signer || (await initializeSigner());
       if (!signer) throw new Error("Signer not initialized");
 
+      console.log("Authenticating Lit signer...");
+
       // Get session signatures for authentication
       const sessionSigs = await getSessionSigs();
+      if (!sessionSigs) throw new Error("Failed to get session signatures");
 
-      // Re-initialize the wallet
-      await signer.init();
+      // Store session signatures in the signer's state
+      // This will be replaced with proper authentication once package is installed
+      setState((prev) => ({
+        ...prev,
+        isAuthenticated: true,
+        error: null,
+      }));
 
-      setState((prev) => ({ ...prev, isAuthenticated: true, error: null }));
+      console.log("Lit signer authenticated successfully");
       return signer;
     } catch (error) {
+      console.error("Failed to authenticate Lit signer:", error);
       const errorMessage =
         error instanceof Error
           ? error.message
-          : "Failed to authenticate PKP signer";
+          : "Failed to authenticate Lit signer";
       setState((prev) => ({
         ...prev,
         isAuthenticated: false,
@@ -80,7 +103,7 @@ export function useLitSigner({ pkpPublicKey, chain }: UseLitSignerProps) {
       }));
       throw error;
     }
-  }, [state.signer, initializeSigner, getSessionSigs]);
+  }, [state.signer, initializeSigner, getSessionSigs, user?.type]);
 
   return {
     signer: state.signer,

@@ -3,6 +3,9 @@ import { useCallback, useState } from "react";
 import { useLitSigner } from "./useLitSigner";
 import { useSmartAccountClient } from "@account-kit/react";
 import { baseSepolia } from "@account-kit/infra";
+import { LitNodeClient } from "@lit-protocol/lit-node-client";
+import { LIT_NETWORK } from "@lit-protocol/constants";
+import { useSessionSigs } from "./sessionSigs";
 
 interface UseLitSmartAccountProps {
   pkpPublicKey: string;
@@ -11,6 +14,7 @@ interface UseLitSmartAccountProps {
 
 interface SmartAccountState {
   error: Error | null;
+  isAuthenticating: boolean;
 }
 
 export function useLitSmartAccount({
@@ -19,14 +23,18 @@ export function useLitSmartAccount({
 }: UseLitSmartAccountProps) {
   const [state, setState] = useState<SmartAccountState>({
     error: null,
+    isAuthenticating: false,
   });
 
-  const { signer, authenticate, isAuthenticated } = useLitSigner({
+  const {
+    signer,
+    isAuthenticated,
+    error: signerError,
+  } = useLitSigner({
     pkpPublicKey,
     chain,
   });
 
-  // Use Account Kit's smart account client
   const { client, address, isLoadingClient } = useSmartAccountClient({
     type: "ModularAccountV2",
     accountParams: {
@@ -34,33 +42,50 @@ export function useLitSmartAccount({
     },
   });
 
-  const initializeAccount = useCallback(async () => {
+  const { getSessionSigs } = useSessionSigs();
+
+  const authenticate = useCallback(async () => {
+    if (state.isAuthenticating) return false;
+
+    setState((prev) => ({ ...prev, isAuthenticating: true, error: null }));
+
     try {
-      if (!signer) throw new Error("PKP signer not initialized");
-      if (!isAuthenticated) await authenticate();
+      if (!client) throw new Error("Smart account client not initialized");
+      if (!pkpPublicKey) throw new Error("PKP public key is required");
 
-      // The smart account client is automatically initialized by Account Kit
-      // We just need to ensure the signer is authenticated
-
-      return { client, address };
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Failed to initialize smart account";
-      setState({
-        error: new Error(errorMessage),
+      // Initialize LitNodeClient
+      const litNodeClient = new LitNodeClient({
+        litNetwork: LIT_NETWORK.Datil,
+        debug: false,
       });
-      throw error;
+
+      console.log("Connecting to Lit Network...");
+      await litNodeClient.connect();
+
+      console.log("Getting session signatures...");
+      const sessionSigs = await getSessionSigs();
+      if (!sessionSigs) throw new Error("Failed to get session signatures");
+
+      console.log("Authentication successful");
+      return true;
+    } catch (error) {
+      console.error("Authentication failed:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Authentication failed";
+      setState((prev) => ({ ...prev, error: new Error(errorMessage) }));
+      return false;
+    } finally {
+      setState((prev) => ({ ...prev, isAuthenticating: false }));
     }
-  }, [signer, isAuthenticated, authenticate, client, address]);
+  }, [client, pkpPublicKey, getSessionSigs]);
 
   return {
     client,
     address,
-    error: state.error,
+    error: state.error || signerError,
     isLoadingClient,
     isAuthenticated,
-    initializeAccount,
+    isAuthenticating: state.isAuthenticating,
+    authenticate,
   };
 }
