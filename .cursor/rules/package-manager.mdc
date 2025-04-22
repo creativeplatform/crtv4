@@ -1,0 +1,7 @@
+---
+description: Package Manger Commands
+globs: 
+alwaysApply: false
+---
+# Package Manager
+- Use Yarn.
