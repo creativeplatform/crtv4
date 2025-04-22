@@ -216,7 +216,7 @@ export function TopChart() {
                     <AvatarImage
                       src={makeBlockie(address)}
                       className="h-10 w-10 rounded-full"
-                      alt="User Avatar"
+                      alt={`Avatar for ${shortenAddress(address)}`}
                     />
                   </Avatar>
                   <div className="flex flex-col">

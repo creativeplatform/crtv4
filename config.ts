@@ -73,11 +73,21 @@ const transport = alchemy({
 export const config = createConfig(
   {
     transport,
-    chains: chains.map((chain) => ({
-      chain,
-      transport,
-    })),
-    chain: defaultChain,
+    chain: baseSepolia,
+    chains: [
+      {
+        chain: baseSepolia,
+        transport,
+      },
+      {
+        chain: base,
+        transport,
+      },
+      {
+        chain: optimism,
+        transport,
+      },
+    ],
     ssr: true,
     storage: cookieStorage,
     enablePopupOauth: true,

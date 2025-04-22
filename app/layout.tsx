@@ -5,7 +5,8 @@ import { Inter } from "next/font/google";
 import { headers } from "next/headers";
 import "./globals.css";
 import { Providers } from "./providers";
-import Navbar from "@/components/Navbar"; 
+import Navbar from "@/components/Navbar";
+import { cn } from "@/lib/utils";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -26,8 +27,13 @@ export default function RootLayout({
   );
 
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="en" suppressHydrationWarning>
+      <body
+        className={cn(
+          inter.className,
+          "min-h-screen bg-background antialiased"
+        )}
+      >
         <Providers initialState={initialState}>
           <Navbar />
           {children}

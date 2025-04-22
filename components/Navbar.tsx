@@ -24,6 +24,7 @@ import {
   useLogout,
   useUser,
   useChain,
+  useSmartAccountClient,
 } from "@account-kit/react";
 import { base, baseSepolia, optimism, polygon } from "viem/chains";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
@@ -45,6 +46,8 @@ import {
   ArrowUpRight,
   ArrowUpDown,
   LogOut,
+  Wifi,
+  WifiOff,
 } from "lucide-react";
 import type { User as AccountUser } from "@account-kit/signer";
 import useModularAccount from "@/lib/hooks/useModularAccount";
@@ -53,6 +56,14 @@ import { mainnet } from "viem/chains";
 import { ArrowBigDown, ArrowBigUp } from "lucide-react";
 import { LitProtocolStatus } from "./LitProtocolStatus";
 import WertButton from "./wallet/buy/buy-button";
+import { TokenBalance } from "./wallet/balance/TokenBalance";
+import type { Chain as ViemChain } from "viem/chains";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type UseUserResult = (AccountUser & { type: "eoa" | "sca" }) | null;
 
@@ -92,6 +103,72 @@ const truncateAddress = async (address: string, publicClient: any) => {
   }
 };
 
+// Add this near the top with other utility functions
+const getChainGradient = (chain: ViemChain) => {
+  switch (chain.id) {
+    case base.id:
+      return "from-[#0052FF] to-[#0052FF]";
+    case baseSepolia.id:
+      return "from-[#0052FF] to-[#0052FF]";
+    case optimism.id:
+      return "from-[#FF0420] to-[#FF0420]";
+    case polygon.id:
+      return "from-[#8247E5] to-[#8247E5]";
+    default:
+      return "from-gray-400 to-gray-600";
+  }
+};
+
+const getChainName = (chain: ViemChain) => {
+  switch (chain.id) {
+    case base.id:
+      return "Base";
+    case baseSepolia.id:
+      return "Base Sepolia";
+    case optimism.id:
+      return "Optimism";
+    case polygon.id:
+      return "Polygon";
+    default:
+      return chain.name;
+  }
+};
+
+// Add this near the top with other utility functions
+const getChainLogo = (chain: ViemChain) => {
+  switch (chain.id) {
+    case base.id:
+      return "/images/chains/base.svg";
+    case baseSepolia.id:
+      return "/images/chains/base-sepolia.svg";
+    case optimism.id:
+      return "/images/chains/optimism.svg";
+    case polygon.id:
+      return "/images/chains/polygon.svg";
+    default:
+      return "/images/chains/default-chain.svg";
+  }
+};
+
+const getChainTooltip = (chain: ViemChain) => {
+  return `Network: ${chain.name}
+Chain ID: ${chain.id}
+Native Currency: ${chain.nativeCurrency?.symbol || "ETH"}`;
+};
+
+// Add this component for the network status indicator
+function NetworkStatus({ isConnected }: { isConnected: boolean }) {
+  return (
+    <div className="flex items-center">
+      {isConnected ? (
+        <Wifi className="h-3 w-3 text-green-500" />
+      ) : (
+        <WifiOff className="h-3 w-3 text-red-500" />
+      )}
+    </div>
+  );
+}
+
 export default function Navbar() {
   const { openAuthModal } = useAuthModal();
   const user = useUser();
@@ -100,6 +177,8 @@ export default function Navbar() {
   const { account: modularAccount } = useModularAccount();
   const [displayAddress, setDisplayAddress] = useState<string>("");
   const [isArrowUp, setIsArrowUp] = useState(true);
+  const { client: smartAccountClient } = useSmartAccountClient({});
+  const [isNetworkConnected, setIsNetworkConnected] = useState(true);
 
   // Initialize Viem public client for ENS resolution
   const publicClient = createPublicClient({
@@ -133,6 +212,7 @@ export default function Navbar() {
   useEffect(() => {
     console.log("Current Chain:", currentChain);
     console.log("Current Chain Name:", currentChain.name);
+    console.log("Current Chain ID:", currentChain.id);
     setCurrentChainName(currentChain?.name || "Unknown Chain");
   }, [currentChain]);
 
@@ -145,6 +225,33 @@ export default function Navbar() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Add network status check
+  useEffect(() => {
+    const checkNetworkStatus = async () => {
+      try {
+        if (user?.type === "eoa") {
+          setIsNetworkConnected(true);
+          return;
+        }
+        await smartAccountClient?.transport.request({
+          method: "eth_blockNumber",
+        });
+        setIsNetworkConnected(true);
+      } catch (error) {
+        setIsNetworkConnected(false);
+      }
+    };
+
+    const interval = setInterval(checkNetworkStatus, 10000);
+    checkNetworkStatus();
+
+    return () => clearInterval(interval);
+  }, [smartAccountClient, user?.type]);
+
+  useEffect(() => {
+    setCurrentChainName(getChainName(currentChain) || "Unknown Chain");
+  }, [currentChain]);
 
   const handleLinkClick = () => {
     setIsMenuOpen(false);
@@ -303,6 +410,38 @@ export default function Navbar() {
     }
   };
 
+  // Add this function to handle chain switching
+  const handleChainSwitch = async (
+    newChain: ViemChain,
+    chainName: string
+  ): Promise<void> => {
+    try {
+      // Check if already switching chains
+      if (isSettingChain) {
+        toast.warning("Chain switch already in progress");
+        return;
+      }
+
+      // Check if already on the selected chain
+      if (currentChain.id === newChain.id) {
+        toast.info(`Already connected to ${chainName}`);
+        return;
+      }
+
+      console.log("Switching to chain:", {
+        chainId: newChain.id,
+        chainName,
+      });
+
+      await setChain({ chain: newChain });
+      toast.success(`Switched to ${chainName}`);
+      setCurrentChainName(chainName);
+    } catch (error) {
+      console.error("Error switching chain:", error);
+      toast.error(`Failed to switch to ${chainName}`);
+    }
+  };
+
   return (
     <header className={headerClassName}>
       <div className="container mx-auto px-4 sm:px-6">
@@ -378,63 +517,81 @@ export default function Navbar() {
             <div>
               {user ? (
                 <div className="flex items-center gap-2">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="flex gap-2 items-center transition-all hover:bg-gray-100 
-                          dark:hover:bg-gray-800 hover:border-blue-500"
+                  <TooltipProvider>
+                    <DropdownMenu>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className="flex gap-2 items-center transition-all hover:bg-gray-100 
+                                dark:hover:bg-gray-800 hover:border-blue-500"
+                            >
+                              <div className="relative">
+                                <Image
+                                  src={getChainLogo(currentChain)}
+                                  alt={currentChain.name}
+                                  width={32}
+                                  height={32}
+                                  className="rounded-full"
+                                />
+                                <div className="absolute -bottom-1 -right-1">
+                                  <NetworkStatus
+                                    isConnected={isNetworkConnected}
+                                  />
+                                </div>
+                              </div>
+                              <span>{getChainName(currentChain)}</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <pre className="text-xs">
+                            {getChainTooltip(currentChain)}
+                          </pre>
+                        </TooltipContent>
+                      </Tooltip>
+                      <DropdownMenuContent
+                        align="end"
+                        className="animate-in fade-in-80 slide-in-from-top-5"
                       >
-                        <div
-                          className={`
-                            h-8 w-8 rounded-full flex items-center justify-center text-white
-                            bg-gradient-to-r from-blue-500 to-purple-500
-                          `}
-                        >
-                          <User className="h-4 w-4" />
-                        </div>
-                        <span>
-                          {chainNames[currentChain.id] || currentChain.name}
-                        </span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="end"
-                      className="animate-in fade-in-80 slide-in-from-top-5"
-                    >
-                      <DropdownMenuLabel className="font-semibold text-sm text-gray-500 dark:text-gray-400">
-                        Switch Network
-                      </DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => setChain({ chain: base })}
-                        disabled={isSettingChain}
-                        className="flex items-center cursor-pointer hover:bg-gray-100 
-                          dark:hover:bg-gray-800 transition-colors"
-                      >
-                        <div className="w-4 h-4 mr-2 rounded-full bg-gradient-to-r from-blue-400 to-blue-600"></div>
-                        Base
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => setChain({ chain: optimism })}
-                        disabled={isSettingChain}
-                        className="flex items-center cursor-pointer hover:bg-gray-100 
-                          dark:hover:bg-gray-800 transition-colors"
-                      >
-                        <div className="w-4 h-4 mr-2 rounded-full bg-gradient-to-r from-red-400 to-red-600"></div>
-                        Optimism
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => setChain({ chain: baseSepolia })}
-                        disabled={isSettingChain}
-                        className="flex items-center cursor-pointer hover:bg-gray-100 
-                          dark:hover:bg-gray-800 transition-colors"
-                      >
-                        <div className="w-4 h-4 mr-2 rounded-full bg-gradient-to-r from-blue-300 to-purple-400"></div>
-                        Base Sepolia
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                        <DropdownMenuLabel className="font-semibold text-sm text-gray-500 dark:text-gray-400">
+                          Switch Network
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        {[base, optimism, baseSepolia, polygon].map((chain) => (
+                          <Tooltip key={chain.id}>
+                            <TooltipTrigger asChild>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleChainSwitch(chain, getChainName(chain))
+                                }
+                                disabled={
+                                  isSettingChain || currentChain.id === chain.id
+                                }
+                                className="flex items-center cursor-pointer hover:bg-gray-100 
+                                  dark:hover:bg-gray-800 transition-colors"
+                              >
+                                <Image
+                                  src={getChainLogo(chain)}
+                                  alt={chain.name}
+                                  width={32}
+                                  height={32}
+                                  className="mr-2 rounded-full"
+                                />
+                                {getChainName(chain)}
+                              </DropdownMenuItem>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <pre className="text-xs">
+                                {getChainTooltip(chain)}
+                              </pre>
+                            </TooltipContent>
+                          </Tooltip>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TooltipProvider>
 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -474,6 +631,8 @@ export default function Navbar() {
                           <Copy className="ml-2 h-4 w-4" />
                         )}
                       </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <TokenBalance />
                       <DropdownMenuSeparator />
                       <LitProtocolStatus />
                       <DropdownMenuSeparator />
@@ -557,7 +716,7 @@ export default function Navbar() {
                             {displayAddress}
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {chainNames[currentChain.id] || currentChain.name}
+                            {getChainName(currentChain)}
                           </p>
                         </div>
                       </div>
@@ -573,6 +732,50 @@ export default function Navbar() {
                           <Copy className="h-4 w-4" />
                         )}
                       </Button>
+                    </div>
+
+                    {/* Add TokenBalance here */}
+                    <div className="mt-4">
+                      <TokenBalance />
+                    </div>
+
+                    {/* Add Chain Selector here */}
+                    <div className="mt-4">
+                      <p className="text-sm font-medium mb-2">Network</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[base, optimism, baseSepolia, polygon].map((chain) => (
+                          <Button
+                            key={chain.id}
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              handleChainSwitch(chain, getChainName(chain))
+                            }
+                            disabled={
+                              isSettingChain || currentChain.id === chain.id
+                            }
+                            className={`flex items-center justify-start space-x-2 ${
+                              currentChain.id === chain.id
+                                ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+                                : ""
+                            }`}
+                          >
+                            <Image
+                              src={getChainLogo(chain)}
+                              alt={chain.name}
+                              width={20}
+                              height={20}
+                              className="rounded-full"
+                            />
+                            <span className="text-xs">
+                              {getChainName(chain)}
+                            </span>
+                            {currentChain.id === chain.id && (
+                              <NetworkStatus isConnected={isNetworkConnected} />
+                            )}
+                          </Button>
+                        ))}
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-2">
