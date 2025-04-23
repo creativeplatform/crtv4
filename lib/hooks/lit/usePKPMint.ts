@@ -4,6 +4,8 @@ import { getContractClient } from "../../sdk/lit/lit-contracts";
 import { useUser } from "@account-kit/react";
 import { useLitContext } from "./useLitContext";
 import type { ContractReceipt } from "@ethersproject/contracts";
+import { AUTH_METHOD_SCOPE, AUTH_METHOD_TYPE } from "@lit-protocol/constants";
+import { toHex } from "viem";
 
 export interface PKPMintInfo {
   tokenId: string;
@@ -38,9 +40,22 @@ export function usePKPMint() {
         throw new Error("Failed to initialize contract client");
       }
 
-      // Mint PKP using ECDSA (keyType = 2)
-      const tx = await contractClient.pkpNftContract.write.mintNext([2]);
-      const receipt = (await tx.wait()) as ContractReceipt;
+      // Create auth method using the user's smart account
+      const authMethod = {
+        authMethodType: toHex(2), // EthWallet type
+        id: user.address,
+        userPubkey: "0x" as const, // No pubkey needed for ETH wallet auth
+      };
+
+      // Define scopes for the PKP
+      const scopes = [
+        AUTH_METHOD_SCOPE.SignAnything,
+        AUTH_METHOD_SCOPE.PersonalSign,
+      ];
+
+      // Mint PKP with auth method and scopes
+      const mintTx = await contractClient.pkpNftContract.write.mintNext([2]); // 2 = ECDSA
+      const receipt = (await mintTx.wait()) as ContractReceipt;
 
       // Get PKP details from receipt
       const mintEvent = receipt.events?.find(
@@ -57,6 +72,15 @@ export function usePKPMint() {
         ethAddress: mintEvent.args.ethAddress,
       };
 
+      // Add auth method to PKP
+      const addAuthTx =
+        await contractClient.pkpPermissionsContract.write.addPermittedAuthMethod(
+          pkpInfo.tokenId,
+          authMethod,
+          scopes
+        );
+      await addAuthTx.wait();
+
       // Update context
       setPKP(pkpInfo);
 
@@ -72,7 +96,7 @@ export function usePKPMint() {
         error: error instanceof Error ? error.message : "Failed to mint PKP",
       };
     }
-  }, [client, user?.type, setPKP]);
+  }, [client, user?.type, user?.address, setPKP]);
 
   return {
     pkp,

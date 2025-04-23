@@ -8,6 +8,7 @@ import type {
   AuthCallbackParams,
   SignerLike,
   LitResourceAbilityRequest,
+  SessionSigs,
 } from "@lit-protocol/types";
 import { useUser } from "@account-kit/react";
 import useModularAccount from "@/lib/hooks/accountkit/useModularAccount";
@@ -17,12 +18,21 @@ import {
 } from "@lit-protocol/auth-helpers";
 import { isEOA } from "@/lib/utils/wallet";
 import { validateAuthSig, validateAuthParams } from "./types/auth";
+import { useEoaSigner } from "@/lib/hooks/lit/useEoaSigner";
 
 const SESSION_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
 interface SessionError extends Error {
   code: string;
   details?: unknown;
+}
+
+interface ValidateAuthParams {
+  chain: string;
+  expiration: string;
+  pkpPublicKey: string;
+  resourceAbilityRequests: LitResourceAbilityRequest[];
+  nonce: string;
 }
 
 function createSessionError(
@@ -32,22 +42,19 @@ function createSessionError(
 ): SessionError {
   const error = new Error(message) as SessionError;
   error.code = code;
-  error.details = details;
+  if (details) error.details = details;
   return error;
-}
-
-export interface SessionSigs {
-  [key: string]: AuthSig;
 }
 
 export function useSessionSigs() {
   const { smartAccountClient: client } = useModularAccount();
+  const { signer: eoaSigner, address: eoaAddress } = useEoaSigner();
   const user = useUser();
   const [litNodeClient, setLitNodeClient] = useState<LitNodeClient | null>(
     null
   );
-  const [isEOAMode, setIsEOAMode] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
+  const [sessionSigs, setSessionSigs] = useState<SessionSigs | null>(null);
 
   const initLitClient = useCallback(async (): Promise<LitNodeClient | null> => {
     try {
@@ -65,31 +72,68 @@ export function useSessionSigs() {
     }
   }, []);
 
+  const validateSession = useCallback(
+    async (sigs: SessionSigs): Promise<boolean> => {
+      try {
+        if (!sigs || typeof sigs.expiration !== "string") return false;
+
+        // Check expiration
+        const expiration = new Date(sigs.expiration).getTime();
+        if (Date.now() >= expiration) return false;
+
+        // Validate auth parameters
+        const params: ValidateAuthParams = {
+          chain: "ethereum",
+          expiration: sigs.expiration,
+          pkpPublicKey:
+            typeof sigs.pkpPublicKey === "string" ? sigs.pkpPublicKey : "",
+          resourceAbilityRequests: [
+            {
+              resource: new LitPKPResource("*"),
+              ability: LIT_ABILITY.PKPSigning,
+            },
+          ],
+          nonce: Date.now().toString(),
+        };
+
+        const isValid = await validateAuthParams(params);
+        return Boolean(isValid);
+      } catch (error) {
+        console.error("Session validation failed:", error);
+        return false;
+      }
+    },
+    []
+  );
+
   const getSessionSigs = useCallback(async (): Promise<SessionSigs | null> => {
     try {
+      // Check existing session
+      if (sessionSigs && (await validateSession(sessionSigs))) {
+        console.log("Using existing valid session");
+        return sessionSigs;
+      }
+
       // Clear any existing client connection
       if (litNodeClient) {
         await litNodeClient.disconnect();
         console.log("Disconnected existing Lit Node Client");
       }
 
-      // Validate prerequisites and determine wallet type
-      if (!client) {
+      // Validate prerequisites
+      if (!eoaSigner) {
         throw createSessionError(
-          "Smart account client not initialized",
-          "CLIENT_NOT_INITIALIZED"
+          "EOA signer required for Lit authentication",
+          "SIGNER_NOT_INITIALIZED"
         );
       }
 
-      // Check if we're dealing with an EOA or SCA
-      const walletType = (await isEOA(client)) ? "eoa" : "sca";
-      setIsEOAMode(walletType === "eoa");
-
-      console.log("Wallet type detected:", {
-        type: walletType,
-        address: await client.getAddress(),
-        timestamp: new Date().toISOString(),
-      });
+      if (!eoaAddress) {
+        throw createSessionError(
+          "EOA address not available",
+          "ADDRESS_NOT_AVAILABLE"
+        );
+      }
 
       // Initialize or get Lit client
       const nodeClient = await initLitClient();
@@ -108,87 +152,40 @@ export function useSessionSigs() {
         },
       ];
 
-      console.log("Preparing auth callback for wallet type:", walletType);
-      const authNeededCallback: AuthCallback = async (
-        params: AuthCallbackParams
-      ): Promise<AuthSig> => {
-        if (
-          !params.uri ||
-          !params.expiration ||
-          !params.resourceAbilityRequests
-        ) {
-          throw createSessionError(
-            "Missing required auth parameters",
-            "INVALID_AUTH_PARAMS"
-          );
-        }
+      console.log("Preparing auth callback with EOA signer");
 
-        console.log("Auth callback triggered with params:", {
-          uri: params.uri,
-          expiration: params.expiration,
-          resourceCount: params.resourceAbilityRequests.length,
-          walletType,
-        });
-
+      const authNeededCallback: AuthCallback = async ({
+        expiration,
+        resources,
+        resourceAbilityRequests,
+        chain,
+        nonce,
+      }: AuthCallbackParams): Promise<AuthSig> => {
         try {
-          // Get wallet address and validate signer
-          const walletAddress = await client.getAddress();
-          if (!walletAddress) {
-            throw createSessionError(
-              "Failed to get wallet address",
-              "WALLET_ADDRESS_ERROR"
-            );
+          if (!expiration || !resourceAbilityRequests) {
+            throw new Error("Missing required auth parameters");
           }
 
-          // Create SIWE message
+          // Create SIWE message with recaps
           const toSign = await createSiweMessageWithRecaps({
-            uri: params.uri,
-            expiration: params.expiration,
-            resources: params.resourceAbilityRequests,
-            walletAddress,
-            nonce: await nodeClient.getLatestBlockhash(),
-            litNodeClient: nodeClient,
+            walletAddress: eoaAddress,
+            chainId: 1, // Always use mainnet for SIWE
+            resources: resourceAbilityRequests,
+            expiration,
+            uri: "https://lit.protocol",
+            nonce: Date.now().toString(),
           });
 
-          console.log("Generated SIWE message:", {
-            message: toSign,
-            length: toSign.length,
+          // Use EOA signer for SIWE message
+          const authSig = await generateAuthSig({
+            signer: eoaSigner as unknown as SignerLike,
+            toSign,
+            address: eoaAddress,
           });
-
-          let authSig: AuthSig;
-
-          if (walletType === "eoa") {
-            // For EOA, use standard ECDSA signing
-            authSig = await generateAuthSig({
-              signer: client as unknown as SignerLike,
-              toSign,
-              address: walletAddress,
-            });
-          } else {
-            // For SCA, use PKP signing
-            try {
-              const signature = await client.signMessage({
-                message: toSign,
-              });
-              authSig = {
-                sig: signature,
-                derivedVia: "lit-pkp",
-                signedMessage: toSign,
-                address: walletAddress,
-              };
-            } catch (error) {
-              console.error("Failed to sign message with PKP:", error);
-              throw createSessionError(
-                "Failed to sign message with PKP",
-                "PKP_SIGNING_ERROR",
-                { error }
-              );
-            }
-          }
 
           // Validate the generated auth signature
-          const isValid = await validateAuthSig(authSig);
-          if (!isValid) {
+          const isValidSig = await validateAuthSig(authSig);
+          if (!isValidSig) {
             throw createSessionError(
               "Invalid auth signature generated",
               "INVALID_AUTH_SIG"
@@ -197,40 +194,50 @@ export function useSessionSigs() {
 
           return authSig;
         } catch (error) {
-          console.error("Auth callback failed:", {
-            error,
-            message: error instanceof Error ? error.message : "Unknown error",
-            walletType,
-          });
+          console.error("Auth callback failed:", error);
           throw error;
         }
       };
 
       // Get session sigs with the prepared callback
-      const sessionSigs = await nodeClient.getSessionSigs({
+      const newSessionSigs = await nodeClient.getSessionSigs({
         chain: "ethereum",
         expiration: new Date(Date.now() + SESSION_EXPIRY).toISOString(),
         resourceAbilityRequests: resourceAbilities,
         authNeededCallback,
       });
 
+      // Validate and store new session
+      const isValid = await validateSession(newSessionSigs);
+      if (!isValid) {
+        throw createSessionError(
+          "Invalid session signatures received",
+          "INVALID_SESSION"
+        );
+      }
+
+      setSessionSigs(newSessionSigs);
       setIsConnected(true);
-      return sessionSigs;
+      return newSessionSigs;
     } catch (error) {
-      console.error("Failed to get session signatures:", {
-        error,
-        message: error instanceof Error ? error.message : "Unknown error",
-        timestamp: new Date().toISOString(),
-      });
-      setIsConnected(false);
-      throw error;
+      console.error("Failed to get session signatures:", error);
+      setSessionSigs(null);
+      return null;
     }
-  }, [client, litNodeClient, initLitClient]);
+  }, [
+    eoaSigner,
+    eoaAddress,
+    litNodeClient,
+    initLitClient,
+    validateSession,
+    sessionSigs,
+  ]);
 
   return {
+    sessionSigs,
     getSessionSigs,
     initLitClient,
     isConnected,
-    isEOAMode,
+    isEOAMode: user?.type !== "sca",
   };
 }

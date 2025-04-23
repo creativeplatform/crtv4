@@ -3,6 +3,9 @@ import { keccak256, toBytes } from "viem";
 import { getLitClient } from "../../sdk/lit/lit-client";
 import { z } from "zod";
 import { useUser } from "@account-kit/react";
+import { LitNodeClient } from "@lit-protocol/lit-node-client";
+import { LIT_NETWORK } from "@lit-protocol/constants";
+import type { SessionSigs } from "@lit-protocol/types";
 
 const DEFAULT_LIT_ACTION_CODE = `
 const go = async () => {
@@ -14,7 +17,9 @@ const go = async () => {
   const sigShare = await Lit.Actions.signEcdsa({ 
     toSign: messageToSign,
     publicKey, 
-    sigName 
+    sigName,
+    shouldHashMessage: true,
+    sigType: "ethereum",
   });
   return sigShare;
 }
@@ -39,12 +44,33 @@ export type SignParams = z.infer<typeof SignParamsSchema>;
 
 export interface SignResult {
   success: boolean;
-  signatures?: any; // Type from Lit Protocol
+  signatures?: any; // Will be properly typed once we have the full signature format
   error?: string;
+}
+
+export interface TransactionSignParams extends SignParams {
+  transaction: {
+    to: string;
+    value: bigint;
+    data: string;
+    nonce?: number;
+    maxFeePerGas?: bigint;
+    maxPriorityFeePerGas?: bigint;
+    gasLimit?: bigint;
+  };
 }
 
 export function usePKPSigning() {
   const user = useUser();
+
+  const initializeLitClient = useCallback(async (): Promise<LitNodeClient> => {
+    const client = new LitNodeClient({
+      litNetwork: LIT_NETWORK.Datil,
+      debug: false,
+    });
+    await client.connect();
+    return client;
+  }, []);
 
   const signWithPKP = useCallback(
     async ({
@@ -71,10 +97,7 @@ export function usePKPSigning() {
       });
 
       try {
-        const client = await getLitClient();
-        if (!client) {
-          throw new Error("Lit client not initialized");
-        }
+        const client = await initializeLitClient();
 
         const params = SignParamsSchema.parse({
           message,
@@ -113,53 +136,82 @@ export function usePKPSigning() {
           throw new Error("Invalid signature format returned from Lit Action");
         }
 
-        console.log("PKP signing successful:", {
-          hasSignatures: !!signatures,
-          signatureFormat: JSON.stringify(signatures).slice(0, 50) + "...",
-        });
-
         return {
           success: true,
           signatures,
         };
       } catch (error) {
-        console.error("PKP signing failed:", {
-          error,
-          message: error instanceof Error ? error.message : "Unknown error",
-          stack: error instanceof Error ? error.stack : undefined,
-        });
+        console.error("PKP signing failed:", error);
         return {
           success: false,
-          error: `Failed to sign with PKP: ${
-            error instanceof Error ? error.message : "Unknown error"
-          }`,
+          error: error instanceof Error ? error.message : "PKP signing failed",
         };
       }
     },
-    [user?.type]
+    [user?.type, initializeLitClient]
   );
 
-  const signWithStoredAction = useCallback(
+  const signTransaction = useCallback(
     async ({
-      message,
+      transaction,
       publicKey,
-      sigName = "sig1",
       authSig,
-    }: Omit<SignParams, "litActionCode" | "ipfsId">): Promise<SignResult> => {
-      console.log("Using stored Lit Action for signing");
-      return signWithPKP({
-        message,
-        publicKey,
-        sigName,
-        authSig,
-        ipfsId: "QmRwN9GKHvCn4Vk7biqtr6adjXMs7PzzYPCzNCRjPFiDjm",
-      });
+    }: TransactionSignParams): Promise<SignResult> => {
+      try {
+        // Serialize transaction data
+        const serializedTx = {
+          to: transaction.to,
+          value: transaction.value.toString(),
+          data: transaction.data,
+          nonce: transaction.nonce,
+          maxFeePerGas: transaction.maxFeePerGas?.toString(),
+          maxPriorityFeePerGas: transaction.maxPriorityFeePerGas?.toString(),
+          gasLimit: transaction.gasLimit?.toString(),
+        };
+
+        // Create transaction signing code
+        const txSigningCode = `
+const go = async () => {
+  // Serialize and sign the transaction
+  const tx = ${JSON.stringify(serializedTx)};
+  
+  const sigShare = await Lit.Actions.signEcdsa({
+    toSign: tx,
+    publicKey,
+    sigName: "txSig",
+    shouldHashMessage: true,
+    sigType: "ethereum",
+  });
+  
+  return sigShare;
+}
+go();
+`;
+
+        // Sign the transaction using PKP
+        return signWithPKP({
+          message: JSON.stringify(serializedTx),
+          publicKey,
+          sigName: "txSig",
+          authSig,
+          litActionCode: txSigningCode,
+        });
+      } catch (error) {
+        console.error("Transaction signing failed:", error);
+        return {
+          success: false,
+          error:
+            error instanceof Error
+              ? error.message
+              : "Transaction signing failed",
+        };
+      }
     },
     [signWithPKP]
   );
 
   return {
     signWithPKP,
-    signWithStoredAction,
+    signTransaction,
   };
 }

@@ -49,6 +49,7 @@
     "clsx": "^2.1.1",
     "encoding": "^0.1.13",
     "ethereum-blockies-base64": "^1.0.2",
+    "ipfs-only-hash": "^4.0.0",
     "jwt-decode": "^4.0.0",
     "livepeer": "^3.5.0",
     "lucide-react": "^0.477.0",

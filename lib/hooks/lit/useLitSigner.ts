@@ -4,6 +4,9 @@ import { getLitClient } from "../../sdk/lit/lit-client";
 import { useSessionSigs } from "../../sdk/lit/sessionSigs";
 import { useUser } from "@account-kit/react";
 import useModularAccount from "@/lib/hooks/accountkit/useModularAccount";
+import { LitNodeClient } from "@lit-protocol/lit-node-client";
+import { LIT_NETWORK } from "@lit-protocol/constants";
+import type { AuthSig, SessionSigs } from "@lit-protocol/types";
 
 interface UseLitSignerProps {
   pkpPublicKey: string;
@@ -11,9 +14,10 @@ interface UseLitSignerProps {
 }
 
 interface LitSignerState {
-  signer: any; // Will be replaced with proper type once package is installed
+  signer: LitNodeClient | null;
   isAuthenticated: boolean;
   error: Error | null;
+  sessionSigs?: SessionSigs;
 }
 
 export function useLitSigner({ pkpPublicKey, chain }: UseLitSignerProps) {
@@ -25,6 +29,15 @@ export function useLitSigner({ pkpPublicKey, chain }: UseLitSignerProps) {
   const { getSessionSigs } = useSessionSigs();
   const { smartAccountClient: client } = useModularAccount();
   const user = useUser();
+
+  const validateSession = useCallback(async (sessionSigs: SessionSigs) => {
+    if (!sessionSigs) return false;
+    const expiration =
+      typeof sessionSigs.expiration === "string"
+        ? new Date(sessionSigs.expiration).getTime()
+        : 0;
+    return Date.now() < expiration;
+  }, []);
 
   const initializeSigner = useCallback(async () => {
     try {
@@ -40,16 +53,19 @@ export function useLitSigner({ pkpPublicKey, chain }: UseLitSignerProps) {
       });
 
       // Create LitSigner instance
-      const litNodeClient = await getLitClient();
-      if (!litNodeClient) throw new Error("Lit client not initialized");
+      const litNodeClient = new LitNodeClient({
+        litNetwork: LIT_NETWORK.Datil,
+        debug: false,
+      });
 
-      // For now, return the Lit Node Client as the signer
-      // This will be replaced with LitSigner once the package is installed
+      await litNodeClient.connect();
+
       setState((prev) => ({
         ...prev,
         signer: litNodeClient,
         error: null,
       }));
+
       return litNodeClient;
     } catch (error) {
       console.error("Failed to initialize Lit signer:", error);
@@ -76,15 +92,29 @@ export function useLitSigner({ pkpPublicKey, chain }: UseLitSignerProps) {
 
       console.log("Authenticating Lit signer...");
 
-      // Get session signatures for authentication
+      // Check existing session sigs
+      if (state.sessionSigs && (await validateSession(state.sessionSigs))) {
+        console.log("Using existing valid session signatures");
+        setState((prev) => ({
+          ...prev,
+          isAuthenticated: true,
+          error: null,
+        }));
+        return signer;
+      }
+
+      // Get fresh session signatures
       const sessionSigs = await getSessionSigs();
       if (!sessionSigs) throw new Error("Failed to get session signatures");
 
-      // Store session signatures in the signer's state
-      // This will be replaced with proper authentication once package is installed
+      // Validate new session signatures
+      const isValid = await validateSession(sessionSigs);
+      if (!isValid) throw new Error("Invalid session signatures received");
+
       setState((prev) => ({
         ...prev,
         isAuthenticated: true,
+        sessionSigs,
         error: null,
       }));
 
@@ -103,12 +133,20 @@ export function useLitSigner({ pkpPublicKey, chain }: UseLitSignerProps) {
       }));
       throw error;
     }
-  }, [state.signer, initializeSigner, getSessionSigs, user?.type]);
+  }, [
+    state.signer,
+    state.sessionSigs,
+    initializeSigner,
+    getSessionSigs,
+    user?.type,
+    validateSession,
+  ]);
 
   return {
     signer: state.signer,
     isAuthenticated: state.isAuthenticated,
     error: state.error,
+    sessionSigs: state.sessionSigs,
     initializeSigner,
     authenticate,
   };
