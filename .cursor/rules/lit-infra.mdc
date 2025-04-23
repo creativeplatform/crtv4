@@ -1,0 +1,29 @@
+---
+description: 
+globs: lib/sdk/lit/*
+alwaysApply: false
+---
+# Lit Account
+
+- Switch your authNeededCallback to use an EOA signer.
+If you want to use a smart account for transactions, use the EOA for Lit authentication, then use the smart account for your app logic.
+
+## Are ModularV2Accounts accepted by Lit?
+### Not as a direct EOA signer.
+-If you try to use a smart contract account as a signer for SIWE or session signatures, it will fail, because the contract cannot sign messages in the ECDSA format required by SIWE and Lit session signatures.
+
+### What to do instead:
+
+#### For SCA users, you should use a supported authentication method, such as:
+- Lit PKP (Programmable Key Pair)
+- Social login (via Lit)
+- Passkey (via Lit)
+- For EOA users, use the standard ECDSA signature flow.
+
+- No hook calls another that depends on itself.
+- The component manages the PKP state and session sigs.
+- Data flows:
+-- User mints PKP → updates PKP state
+-- PKP state passed to useSessionSigs
+-- getSessionSigs called as needed
+-- Session sigs passed to mintPKP as needed

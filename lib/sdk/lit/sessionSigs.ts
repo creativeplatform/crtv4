@@ -1,32 +1,54 @@
 import { useCallback, useState } from "react";
 import { LitNodeClient } from "@lit-protocol/lit-node-client";
-import { LIT_ABILITY } from "@lit-protocol/constants";
+import { LIT_NETWORKS, LitError, LIT_ABILITY } from "@lit-protocol/constants";
 import { LitPKPResource } from "@lit-protocol/auth-helpers";
 import type {
   AuthSig,
   AuthCallback,
   AuthCallbackParams,
+  SignerLike,
+  LitResourceAbilityRequest,
 } from "@lit-protocol/types";
 import { useUser } from "@account-kit/react";
 import useModularAccount from "@/lib/hooks/useModularAccount";
-import type { AuthNeededParams } from "./types/auth";
-import { validateAuthParams, validateAuthSig } from "./types/auth";
+import {
+  createSiweMessageWithRecaps,
+  generateAuthSig,
+} from "@lit-protocol/auth-helpers";
+import { validateAuthSig, validateAuthParams } from "./types/auth";
+import { PKPEthersWallet } from "@lit-protocol/pkp-ethers";
+import { usePKPMint } from "./usePKPMint";
 
-const LIT_NETWORK = "datil-dev";
-const SESSION_EXPIRY = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+const SESSION_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
-interface SessionSigs {
+interface SessionError extends Error {
+  code: string;
+  details?: unknown;
+}
+
+export interface SessionSigs {
   [key: string]: AuthSig;
 }
 
-interface SessionError extends Error {
-  code?: string;
-  details?: unknown;
+interface SessionSigsHook {
+  getSessionSigs: () => Promise<SessionSigs | null>;
+  initLitClient: () => Promise<LitNodeClient | null>;
+  isConnected: boolean;
+  isEOAMode: boolean;
+}
+
+interface PKPInfo {
+  publicKey: string;
+}
+
+interface PKPMintHook {
+  pkp: PKPInfo | null;
+  mintPKP: () => Promise<unknown>;
 }
 
 function createSessionError(
   message: string,
-  code?: string,
+  code: string,
   details?: unknown
 ): SessionError {
   const error = new Error(message) as SessionError;
@@ -35,38 +57,29 @@ function createSessionError(
   return error;
 }
 
-export function useSessionSigs() {
+export function useSessionSigs(): SessionSigsHook {
   const { smartAccountClient: client } = useModularAccount();
   const user = useUser();
   const [litNodeClient, setLitNodeClient] = useState<LitNodeClient | null>(
     null
   );
+  const [isEOAMode, setIsEOAMode] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
+  const { pkp } = usePKPMint() as PKPMintHook;
 
-  const initLitClient = useCallback(async () => {
+  const initLitClient = useCallback(async (): Promise<LitNodeClient | null> => {
     try {
-      console.log("Initializing Lit Node Client...");
-      const newClient = new LitNodeClient({
-        litNetwork: LIT_NETWORK,
-        debug: true,
+      const client = new LitNodeClient({
+        litNetwork: "datil-dev",
+        debug: false,
       });
-
-      await newClient.connect();
-      console.log("Lit Node Client connected successfully");
-
-      setLitNodeClient(newClient);
-      return newClient;
+      await client.connect();
+      setLitNodeClient(client);
+      setIsConnected(true);
+      return client;
     } catch (error) {
-      const sessionError = createSessionError(
-        "Failed to initialize Lit Node Client",
-        "LIT_CLIENT_INIT_ERROR",
-        {
-          error,
-          message: error instanceof Error ? error.message : "Unknown error",
-          timestamp: new Date().toISOString(),
-        }
-      );
-      console.error(sessionError);
-      throw sessionError;
+      console.error("Failed to initialize Lit client:", error);
+      return null;
     }
   }, []);
 
@@ -80,64 +93,77 @@ export function useSessionSigs() {
         );
       }
 
-      if (user?.type !== "sca") {
+      if (!user?.type) {
         throw createSessionError(
-          "Invalid user type for session signatures",
-          "INVALID_USER_TYPE",
-          { userType: user?.type }
+          "User type not available",
+          "USER_TYPE_NOT_AVAILABLE"
         );
       }
+
+      // For SCA, we need PKP
+      if (user.type === "sca" && !pkp?.publicKey) {
+        throw createSessionError(
+          "PKP not available for SCA authentication",
+          "PKP_NOT_AVAILABLE"
+        );
+      }
+
+      // Determine wallet type
+      const walletType = user.type === "sca" ? "sca" : "eoa";
+      setIsEOAMode(walletType === "eoa");
+
+      console.log("Wallet type determined:", {
+        type: walletType,
+        userType: user.type,
+        hasPKP: !!pkp?.publicKey,
+        address: await client.getAddress(),
+        timestamp: new Date().toISOString(),
+      });
 
       // Initialize or get Lit client
-      const nodeClient = litNodeClient || (await initLitClient());
+      let nodeClient = litNodeClient;
       if (!nodeClient) {
-        throw createSessionError(
-          "Failed to initialize Lit Node Client",
-          "LIT_CLIENT_ERROR"
-        );
-      }
-
-      console.log("Getting session key...");
-      const sessionKeyPair = nodeClient.getSessionKey();
-      if (!sessionKeyPair) {
-        throw createSessionError(
-          "Failed to generate session key pair",
-          "SESSION_KEY_ERROR"
-        );
+        nodeClient = await initLitClient();
+        if (!nodeClient) {
+          throw createSessionError(
+            "Failed to initialize Lit Node Client",
+            "LIT_CLIENT_ERROR"
+          );
+        }
       }
 
       // Define resource abilities for PKP signing
-      const resourceAbilities = [
+      const resourceAbilities: LitResourceAbilityRequest[] = [
         {
           resource: new LitPKPResource("*"),
           ability: LIT_ABILITY.PKPSigning,
         },
       ];
 
-      console.log("Preparing auth callback...");
+      console.log("Preparing auth callback for wallet type:", walletType);
       const authNeededCallback: AuthCallback = async (
         params: AuthCallbackParams
       ): Promise<AuthSig> => {
+        if (
+          !params.uri ||
+          !params.expiration ||
+          !params.resourceAbilityRequests
+        ) {
+          throw createSessionError(
+            "Missing required auth parameters",
+            "INVALID_AUTH_PARAMS"
+          );
+        }
+
         console.log("Auth callback triggered with params:", {
           uri: params.uri,
           expiration: params.expiration,
-          resourceCount: params.resourceAbilityRequests?.length,
+          resourceCount: params.resourceAbilityRequests.length,
+          walletType,
         });
 
         try {
-          // 1. Basic parameter validation
-          if (
-            !params.uri ||
-            !params.expiration ||
-            !params.resourceAbilityRequests
-          ) {
-            throw createSessionError(
-              "Missing required auth parameters",
-              "INVALID_AUTH_PARAMS"
-            );
-          }
-
-          // 2. Get wallet address
+          // Get wallet address
           const walletAddress = await client.getAddress();
           if (!walletAddress) {
             throw createSessionError(
@@ -146,109 +172,114 @@ export function useSessionSigs() {
             );
           }
 
-          // 3. Sign the session key
-          const response = await nodeClient.signSessionKey({
-            sessionKey: sessionKeyPair,
-            statement:
-              params.statement || "Sign in with Ethereum to use Lit Protocol",
-            authMethods: [
-              {
-                authMethodType: 1,
-                accessToken: JSON.stringify({
-                  t: Date.now(),
-                  address: walletAddress,
-                }),
-              },
-            ],
+          // Create SIWE message
+          const toSign = await createSiweMessageWithRecaps({
+            uri: params.uri,
             expiration: params.expiration,
             resources: params.resourceAbilityRequests,
-            chainId: 1,
+            walletAddress,
+            nonce: await nodeClient.getLatestBlockhash(),
+            litNodeClient: nodeClient,
           });
 
-          // 4. Validate response
-          if (!response?.authSig) {
-            throw createSessionError(
-              "No auth signature returned",
-              "AUTH_SIG_ERROR"
-            );
-          }
-
-          // 5. Ensure signature has 0x prefix
-          if (!response.authSig.sig?.startsWith("0x")) {
-            response.authSig.sig = `0x${response.authSig.sig}`;
-          }
-
-          console.log("Session key signed successfully:", {
-            hasSignature: !!response.authSig.sig,
-            signatureFormat: response.authSig.sig?.slice(0, 10) + "...",
+          console.log("Generated SIWE message:", {
+            message: toSign,
+            length: toSign.length,
           });
 
-          // 6. Validate final signature
-          validateAuthSig(response.authSig);
+          let authSig: AuthSig;
 
-          return response.authSig;
-        } catch (error) {
-          const sessionError = createSessionError(
-            "Failed to sign session key",
-            "SESSION_SIGNING_ERROR",
-            {
-              error,
-              message: error instanceof Error ? error.message : "Unknown error",
-              stack: error instanceof Error ? error.stack : undefined,
+          if (walletType === "eoa") {
+            // For EOA, use standard ECDSA signing
+            authSig = await generateAuthSig({
+              signer: client as unknown as SignerLike,
+              toSign,
+              address: walletAddress,
+            });
+          } else {
+            // For SCA, use PKP signing
+            try {
+              if (!pkp?.publicKey) {
+                throw new Error("PKP public key not available");
+              }
+
+              // Initialize PKP wallet with authContext
+              const pkpWallet = new PKPEthersWallet({
+                pkpPubKey: pkp.publicKey,
+                rpc: "https://sepolia.base.org",
+                litNodeClient: nodeClient,
+                authContext: {
+                  getSessionSigsProps: {
+                    chain: "ethereum",
+                    expiration: params.expiration,
+                    resourceAbilityRequests: params.resourceAbilityRequests,
+                    authNeededCallback,
+                  },
+                },
+              });
+              await pkpWallet.init();
+
+              // Sign with PKP wallet
+              const signature = await pkpWallet.signMessage(toSign);
+              authSig = {
+                sig: signature,
+                derivedVia: "lit-pkp",
+                signedMessage: toSign,
+                address: walletAddress,
+              };
+            } catch (error) {
+              console.error("Failed to sign with PKP:", error);
+              throw createSessionError(
+                "Failed to sign with PKP",
+                "PKP_SIGNING_ERROR",
+                { error }
+              );
             }
-          );
-          console.error(sessionError);
-          throw sessionError;
+          }
+
+          // Log signature details
+          console.log("Generated auth signature:", {
+            type: walletType,
+            hasSig: !!authSig?.sig,
+            sigLength: authSig?.sig?.length,
+            derivedVia: authSig?.derivedVia,
+          });
+
+          return authSig;
+        } catch (error) {
+          console.error("Auth callback failed:", {
+            error,
+            message: error instanceof Error ? error.message : "Unknown error",
+          });
+          throw error;
         }
       };
 
-      console.log("Requesting session signatures...");
+      // Get session sigs with the prepared callback
       const sessionSigs = await nodeClient.getSessionSigs({
         chain: "ethereum",
         expiration: new Date(Date.now() + SESSION_EXPIRY).toISOString(),
         resourceAbilityRequests: resourceAbilities,
-        sessionKey: sessionKeyPair,
         authNeededCallback,
       });
 
-      // Validate session signatures
-      if (!sessionSigs || Object.keys(sessionSigs).length === 0) {
-        throw createSessionError(
-          "No session signatures generated",
-          "NO_SESSION_SIGS"
-        );
-      }
-
-      // Ensure all signatures are properly formatted
-      Object.entries(sessionSigs).forEach(([key, sig]) => {
-        if (sig.sig && !sig.sig.startsWith("0x")) {
-          sessionSigs[key].sig = `0x${sig.sig}`;
-        }
-      });
-
-      console.log("Session signatures obtained successfully:", {
-        hasSignatures: !!sessionSigs,
-        signatureKeys: Object.keys(sessionSigs),
-        timestamp: new Date().toISOString(),
-      });
-
+      setIsConnected(true);
       return sessionSigs;
     } catch (error) {
       console.error("Failed to get session signatures:", {
         error,
-        code: (error as SessionError).code,
         message: error instanceof Error ? error.message : "Unknown error",
-        details: (error as SessionError).details,
-        stack: error instanceof Error ? error.stack : undefined,
         timestamp: new Date().toISOString(),
       });
-      return null;
+      setIsConnected(false);
+      throw error;
     }
-  }, [client, user, litNodeClient, initLitClient]);
+  }, [client, litNodeClient, initLitClient, user?.type, pkp?.publicKey]);
 
   return {
     getSessionSigs,
     initLitClient,
-    isConnected: !!litNodeClient,
+    isConnected,
+    isEOAMode,
   };
 }

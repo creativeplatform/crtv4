@@ -1,7 +1,8 @@
 ---
-description: Package Manger Commands
+description: 
 globs: 
-alwaysApply: false
+alwaysApply: true
 ---
-# Package Manager
-- Use Yarn.
+# Package Commands
+- Always use yarn.
+- Use context7 for reference and clarity.

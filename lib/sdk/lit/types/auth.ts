@@ -40,24 +40,85 @@ export async function validateSigner(signer: SignerLike): Promise<void> {
     throw new Error("Signer is undefined");
   }
 
+  // Log signer type and capabilities
+  console.log("Validating signer:", {
+    type: signer.constructor.name,
+    hasSignMessage: typeof signer.signMessage === "function",
+    hasGetAddress: typeof signer.getAddress === "function",
+    hasProvider: !!(signer as any).provider,
+    providerType: (signer as any).provider?.constructor?.name || "Unknown",
+  });
+
   if (!signer.signMessage || !signer.getAddress) {
-    console.error("Invalid signer:", {
-      hasSignMessage: !!signer.signMessage,
-      hasGetAddress: !!signer.getAddress,
-    });
-    throw new Error("Invalid signer: missing required methods");
+    throw new Error(
+      "Invalid signer: missing required methods signMessage or getAddress"
+    );
   }
 
   try {
     const address = await signer.getAddress();
-    if (!address) throw new Error("Failed to get signer address");
-    console.log("Signer validated successfully:", { address });
+    if (!address || !address.startsWith("0x")) {
+      throw new Error("Invalid address format from signer");
+    }
+
+    console.log("Signer address validated:", address);
+
+    // Test signing capability with a known message
+    const testMessage = "Lit Protocol Signer Validation Test";
+    console.log("Testing signer with message:", testMessage);
+
+    const signature = await signer.signMessage(testMessage);
+
+    // Validate signature format
+    if (!signature) {
+      throw new Error("Signer returned null or undefined signature");
+    }
+
+    if (!signature.startsWith("0x")) {
+      console.warn("Signature missing 0x prefix, will be added automatically");
+    }
+
+    const formattedSig = signature.startsWith("0x")
+      ? signature
+      : `0x${signature}`;
+
+    // Check signature length (65 bytes = 130 hex chars + 0x prefix = 132 total)
+    if (formattedSig.length !== 132) {
+      throw new Error(
+        `Invalid signature length: ${formattedSig.length} chars (expected 132)`
+      );
+    }
+
+    // Check signature format (must be hex)
+    if (!/^0x[0-9a-fA-F]{130}$/.test(formattedSig)) {
+      throw new Error(
+        "Invalid signature format: must be 0x-prefixed hex string"
+      );
+    }
+
+    // Check for invalid signatures (all zeros, etc)
+    if (formattedSig.replace("0x", "").match(/^0+$/)) {
+      throw new Error("Invalid signature: contains all zeros");
+    }
+
+    console.log("Signer validation successful:", {
+      address,
+      signaturePreview: `${formattedSig.slice(0, 10)}...${formattedSig.slice(
+        -8
+      )}`,
+      signatureLength: formattedSig.length,
+    });
   } catch (error) {
     console.error("Signer validation failed:", {
       error,
       message: error instanceof Error ? error.message : "Unknown error",
+      stack: error instanceof Error ? error.stack : undefined,
     });
-    throw new Error("Invalid signer: failed to get address");
+    throw new Error(
+      `Signer validation failed: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
   }
 }
 

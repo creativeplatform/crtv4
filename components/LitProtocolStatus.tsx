@@ -7,6 +7,8 @@ import { useUser } from "@account-kit/react";
 import { useSessionSigs } from "@/lib/sdk/lit/sessionSigs";
 import { toast } from "sonner";
 import type { AuthSig } from "@lit-protocol/types";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { InfoIcon } from "lucide-react";
 
 interface InitializationState {
   hasClient: boolean;
@@ -15,6 +17,7 @@ interface InitializationState {
   error: string | null;
   lastAttempt: number | null;
   sessionExpiration?: string;
+  walletType: "eoa" | "sca" | null;
 }
 
 const DEBOUNCE_DELAY = 1000; // 1 second
@@ -31,7 +34,8 @@ function isValidDate(date: string | undefined): date is string {
 export function LitProtocolStatus(): JSX.Element {
   const { smartAccountClient: client } = useModularAccount();
   const { mintPKP } = usePKPMint();
-  const { getSessionSigs, initLitClient, isConnected } = useSessionSigs();
+  const { getSessionSigs, initLitClient, isConnected, isEOAMode } =
+    useSessionSigs();
   const user = useUser();
   const checkTimeoutRef = useRef<NodeJS.Timeout>();
   const retryCountRef = useRef(0);
@@ -42,6 +46,7 @@ export function LitProtocolStatus(): JSX.Element {
     hasSessionSigs: false,
     error: null,
     lastAttempt: null,
+    walletType: null,
   });
 
   // Cleanup function for debounce timeout
@@ -131,6 +136,7 @@ export function LitProtocolStatus(): JSX.Element {
       currentState: initState,
       hasClient: !!client,
       userType: user?.type,
+      isEOAMode,
       retryCount: retryCountRef.current,
       timestamp: new Date().toISOString(),
     });
@@ -151,15 +157,16 @@ export function LitProtocolStatus(): JSX.Element {
       return;
     }
 
-    setInitState((prev) => ({ ...prev, isInitializing: true, error: null }));
+    setInitState((prev) => ({
+      ...prev,
+      isInitializing: true,
+      error: null,
+      walletType: isEOAMode ? "eoa" : "sca",
+    }));
 
     try {
       if (!client) {
         throw new Error("Smart Account client not initialized");
-      }
-
-      if (user?.type !== "sca") {
-        throw new Error("Lit Protocol requires a Smart Contract Account");
       }
 
       // Initialize Lit client if not connected
@@ -174,12 +181,17 @@ export function LitProtocolStatus(): JSX.Element {
         throw new Error("Session signatures not ready - please try again");
       }
 
-      console.log("Prerequisites checked, proceeding with PKP minting...");
-      const result = await mintPKP();
-      console.log("PKP minting successful:", {
-        result,
-        timestamp: new Date().toISOString(),
-      });
+      // Only mint PKP for SCA users
+      if (!isEOAMode) {
+        console.log("SCA detected, proceeding with PKP minting...");
+        const result = await mintPKP();
+        console.log("PKP minting successful:", {
+          result,
+          timestamp: new Date().toISOString(),
+        });
+      } else {
+        console.log("EOA detected, skipping PKP minting...");
+      }
 
       // Reset retry count on success
       retryCountRef.current = 0;
@@ -238,6 +250,7 @@ export function LitProtocolStatus(): JSX.Element {
     debouncedCheckSessionSigs,
     isConnected,
     initLitClient,
+    isEOAMode,
   ]);
 
   // Check for session expiry periodically
@@ -287,43 +300,49 @@ export function LitProtocolStatus(): JSX.Element {
     }
   }, [client, user?.type, handleInitializeLit, initState]);
 
-  if (initState.error) {
-    return (
-      <div className="flex items-center gap-2 px-3 py-2 text-sm text-red-500 bg-red-50 rounded-md">
-        <div className="w-2 h-2 bg-red-500 rounded-full" />
-        <span>Failed to initialize Lit Protocol: {initState.error}</span>
-        <button
-          onClick={handleInitializeLit}
-          className="px-2 py-1 ml-2 text-xs text-red-600 border border-red-300 rounded hover:bg-red-100"
-        >
-          Retry
-        </button>
-      </div>
-    );
-  }
-
-  if (initState.isInitializing) {
-    return (
-      <div className="flex items-center gap-2 px-3 py-2 text-sm text-blue-500 bg-blue-50 rounded-md">
-        <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-        <span>Initializing Lit Protocol...</span>
-      </div>
-    );
-  }
-
-  if (!initState.hasClient || !initState.hasSessionSigs) {
-    return (
-      <div className="flex items-center gap-2 px-3 py-2 text-sm text-yellow-500 bg-yellow-50 rounded-md">
-        <div className="w-2 h-2 bg-yellow-500 rounded-full" />
-        <span>Waiting for initialization...</span>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex items-center gap-2 px-3 py-2 text-sm text-green-500 bg-green-50 rounded-md">
-      <div className="w-2 h-2 bg-green-500 rounded-full" />
-      <span>Lit Protocol initialized successfully</span>
+    <div className="space-y-4">
+      {initState.walletType && (
+        <Alert>
+          <InfoIcon className="h-4 w-4" />
+          <AlertTitle>
+            Using {initState.walletType.toUpperCase()} Mode
+          </AlertTitle>
+          <AlertDescription>
+            {initState.walletType === "eoa"
+              ? "Using standard ECDSA signatures for Lit Protocol authentication."
+              : "Using PKP for Lit Protocol authentication with your Smart Contract Account."}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {initState.error ? (
+        <div className="flex items-center gap-2 px-3 py-2 text-sm text-red-500 bg-red-50 rounded-md">
+          <div className="w-2 h-2 bg-red-500 rounded-full" />
+          <span>Failed to initialize Lit Protocol: {initState.error}</span>
+          <button
+            onClick={handleInitializeLit}
+            className="px-2 py-1 ml-2 text-xs text-red-600 border border-red-300 rounded hover:bg-red-100"
+          >
+            Retry
+          </button>
+        </div>
+      ) : initState.isInitializing ? (
+        <div className="flex items-center gap-2 px-3 py-2 text-sm text-blue-500 bg-blue-50 rounded-md">
+          <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+          <span>Initializing Lit Protocol...</span>
+        </div>
+      ) : !initState.hasClient || !initState.hasSessionSigs ? (
+        <div className="flex items-center gap-2 px-3 py-2 text-sm text-yellow-500 bg-yellow-50 rounded-md">
+          <div className="w-2 h-2 bg-yellow-500 rounded-full" />
+          <span>Waiting for initialization...</span>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 px-3 py-2 text-sm text-green-500 bg-green-50 rounded-md">
+          <div className="w-2 h-2 bg-green-500 rounded-full" />
+          <span>Lit Protocol initialized successfully</span>
+        </div>
+      )}
     </div>
   );
 }

@@ -13,6 +13,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useSessionSigs } from "@/lib/sdk/lit/sessionSigs";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { InfoIcon } from "lucide-react";
 
 interface PKPDelegatedSigningExampleProps {
   pkpInfo: {
@@ -28,6 +31,7 @@ export function PKPDelegatedSigningExample({
   capacityTokenId,
 }: PKPDelegatedSigningExampleProps) {
   const { signWithDelegation } = usePKPDelegatedSigning();
+  const { isEOAMode } = useSessionSigs();
   const [message, setMessage] = useState("");
   const [maxUses, setMaxUses] = useState("1");
   const [isLoading, setIsLoading] = useState(false);
@@ -67,12 +71,27 @@ export function PKPDelegatedSigningExample({
       <div className="space-y-4">
         <h2 className="text-lg font-semibold">PKP Delegated Signing Example</h2>
 
+        {isEOAMode && (
+          <Alert>
+            <InfoIcon className="h-4 w-4" />
+            <AlertTitle>Using EOA Mode</AlertTitle>
+            <AlertDescription>
+              You are currently using an EOA wallet for Lit Protocol
+              authentication. This allows for standard ECDSA signatures required
+              by Lit Protocol.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="space-y-2">
           <p className="text-sm text-muted-foreground">
             PKP Token ID: {pkpInfo.tokenId}
           </p>
           <p className="text-sm text-muted-foreground">
             Capacity Token ID: {capacityTokenId}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Wallet Type: {isEOAMode ? "EOA" : "Smart Contract Account"}
           </p>
         </div>
 
