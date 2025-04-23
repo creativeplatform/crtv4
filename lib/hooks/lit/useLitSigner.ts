@@ -81,56 +81,27 @@ export function useLitSigner({ pkpPublicKey, chain }: UseLitSignerProps) {
     }
   }, [pkpPublicKey, chain, client, user?.type]);
 
+  // Add to lib/hooks/lit/useLitSigner.ts
   const authenticate = useCallback(async () => {
     try {
-      if (!user?.type || user.type !== "sca") {
-        throw new Error("Smart Contract Account required for Lit Protocol");
-      }
+      if (!user?.type || user.type !== "sca")
+        throw new Error("Smart Contract Account required");
 
       const signer = state.signer || (await initializeSigner());
       if (!signer) throw new Error("Signer not initialized");
 
-      console.log("Authenticating Lit signer...");
-
-      // Check existing session sigs
+      // Validate session
       if (state.sessionSigs && (await validateSession(state.sessionSigs))) {
-        console.log("Using existing valid session signatures");
-        setState((prev) => ({
-          ...prev,
-          isAuthenticated: true,
-          error: null,
-        }));
         return signer;
       }
 
-      // Get fresh session signatures
+      // Get fresh session sigs
       const sessionSigs = await getSessionSigs();
       if (!sessionSigs) throw new Error("Failed to get session signatures");
 
-      // Validate new session signatures
-      const isValid = await validateSession(sessionSigs);
-      if (!isValid) throw new Error("Invalid session signatures received");
-
-      setState((prev) => ({
-        ...prev,
-        isAuthenticated: true,
-        sessionSigs,
-        error: null,
-      }));
-
-      console.log("Lit signer authenticated successfully");
       return signer;
     } catch (error) {
-      console.error("Failed to authenticate Lit signer:", error);
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Failed to authenticate Lit signer";
-      setState((prev) => ({
-        ...prev,
-        isAuthenticated: false,
-        error: new Error(errorMessage),
-      }));
+      console.error("Authentication failed:", error);
       throw error;
     }
   }, [

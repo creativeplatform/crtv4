@@ -72,34 +72,35 @@ export function useSessionSigs() {
     }
   }, []);
 
+  // Add to lib/sdk/lit/sessionSigs.ts
   const validateSession = useCallback(
     async (sigs: SessionSigs): Promise<boolean> => {
+      if (!sigs || typeof sigs.expiration !== "string") return false;
+
+      // Check expiration
+      const expiration = new Date(sigs.expiration).getTime();
+      if (Date.now() >= expiration) return false;
+
+      // Validate auth parameters
+      const params: ValidateAuthParams = {
+        chain: "base-sepolia",
+        expiration: sigs.expiration,
+        pkpPublicKey:
+          typeof sigs.pkpPublicKey === "string" ? sigs.pkpPublicKey : "",
+        nonce: Date.now().toString(),
+        resourceAbilityRequests: [
+          {
+            resource: new LitPKPResource("*"),
+            ability: LIT_ABILITY.PKPSigning,
+          },
+        ],
+      };
+
       try {
-        if (!sigs || typeof sigs.expiration !== "string") return false;
-
-        // Check expiration
-        const expiration = new Date(sigs.expiration).getTime();
-        if (Date.now() >= expiration) return false;
-
-        // Validate auth parameters
-        const params: ValidateAuthParams = {
-          chain: "ethereum",
-          expiration: sigs.expiration,
-          pkpPublicKey:
-            typeof sigs.pkpPublicKey === "string" ? sigs.pkpPublicKey : "",
-          resourceAbilityRequests: [
-            {
-              resource: new LitPKPResource("*"),
-              ability: LIT_ABILITY.PKPSigning,
-            },
-          ],
-          nonce: Date.now().toString(),
-        };
-
-        const isValid = await validateAuthParams(params);
-        return Boolean(isValid);
+        await validateAuthParams(params);
+        return true;
       } catch (error) {
-        console.error("Session validation failed:", error);
+        console.error("Auth params validation failed:", error);
         return false;
       }
     },
