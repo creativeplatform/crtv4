@@ -156,39 +156,26 @@ export function validateAuthParams(params: AuthNeededParams): void {
   });
 }
 
-export function validateAuthSig(authSig: LitAuthSig): void {
-  const errors: string[] = [];
-
+export async function validateAuthSig(authSig: LitAuthSig): Promise<boolean> {
   if (!authSig) {
-    throw new Error("Auth signature is undefined");
+    console.warn("Auth signature is undefined");
+    return false;
   }
 
-  if (!authSig.sig) errors.push("Missing signature");
-  if (!authSig.derivedVia) errors.push("Missing derivedVia");
-  if (!authSig.signedMessage) errors.push("Missing signedMessage");
-  if (!authSig.address) errors.push("Missing address");
-
-  if (errors.length > 0) {
-    console.error("Auth signature validation failed:", {
-      errors,
-      authSig: {
-        hasSignature: !!authSig.sig,
-        hasDerivedVia: !!authSig.derivedVia,
-        hasSignedMessage: !!authSig.signedMessage,
-        hasAddress: !!authSig.address,
-      },
-    });
-    throw new Error(`Invalid auth signature: ${errors.join(", ")}`);
+  // Check for required properties
+  const requiredProps = ["sig", "derivedVia", "signedMessage", "address"];
+  for (const prop of requiredProps) {
+    if (!authSig[prop as keyof LitAuthSig]) {
+      console.error(`Missing required property: ${prop}`);
+      return false;
+    }
   }
 
   // Validate signature format
-  if (!isValidECDSASignature(authSig.sig)) {
-    throw new Error(`Invalid signature format: ${authSig.sig.slice(0, 10)}...`);
+  if (typeof authSig.sig !== "string" || !authSig.sig.startsWith("0x")) {
+    console.error("Invalid signature format");
+    return false;
   }
 
-  console.log("Auth signature validated successfully:", {
-    address: authSig.address,
-    signatureStart: `${authSig.sig.slice(0, 10)}...`,
-    derivedVia: authSig.derivedVia,
-  });
+  return true;
 }

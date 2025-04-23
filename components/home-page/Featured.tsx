@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import { PreviewPlayer } from '../Player/PreviewPlayer';
-import { getFeaturedPlaybackSource } from '@/lib/utils/hooks/useFeaturePlaybackSource';
-import { FEATURED_VIDEO_TITLE } from '@/lib/utils/context';
-import { Src } from '@livepeer/react';
-import { useVideo } from '@/context/VideoContext';
+import React, { useEffect, useState } from "react";
+import { PreviewPlayer } from "../Player/PreviewPlayer";
+import { getFeaturedPlaybackSource } from "@/lib/hooks/livepeer/useFeaturePlaybackSource";
+import { FEATURED_VIDEO_TITLE } from "@/context/context";
+import { Src } from "@livepeer/react";
+import { useVideo } from "@/context/VideoContext";
 
 const FeaturedVideo: React.FC = () => {
   const [playbackSource, setPlaybackSource] = useState<Src[] | null>(null);
@@ -19,8 +19,8 @@ const FeaturedVideo: React.FC = () => {
         const src = await getFeaturedPlaybackSource();
         setPlaybackSource(src);
       } catch (err) {
-        setError('Failed to load featured video');
-        console.error('Error loading featured video:', err);
+        setError("Failed to load featured video");
+        console.error("Error loading featured video:", err);
       } finally {
         setIsLoading(false);
       }
@@ -37,7 +37,9 @@ const FeaturedVideo: React.FC = () => {
           <div className="flex items-center justify-center aspect-video bg-gray-900 rounded-lg">
             <div className="flex flex-col items-center space-y-4">
               <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-              <div className="text-lg font-semibold text-white">Loading featured content...</div>
+              <div className="text-lg font-semibold text-white">
+                Loading featured content...
+              </div>
             </div>
           </div>
           <div className="space-y-4 animate-pulse">
@@ -61,15 +63,18 @@ const FeaturedVideo: React.FC = () => {
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div className="flex items-center justify-center aspect-video bg-gray-900 rounded-lg">
             <div className="text-center">
-              <h3 className="text-xl font-medium text-white">Unable to load featured content</h3>
+              <h3 className="text-xl font-medium text-white">
+                Unable to load featured content
+              </h3>
               <p className="mt-2 text-gray-400">Please try again later</p>
             </div>
           </div>
           <div className="space-y-4">
             <h3 className="text-xl font-medium">{FEATURED_VIDEO_TITLE}</h3>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Experience the future of creative content. Watch how creators are leveraging Web3 
-              technology to build sustainable careers and connect with their audience in new ways.
+              Experience the future of creative content. Watch how creators are
+              leveraging Web3 technology to build sustainable careers and
+              connect with their audience in new ways.
             </p>
           </div>
         </div>
@@ -82,17 +87,15 @@ const FeaturedVideo: React.FC = () => {
       <h2 className="mb-8 text-2xl font-bold">Featured</h2>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <div className="overflow-hidden rounded-lg bg-gray-900 shadow-md transition-all hover:shadow-lg">
-          <PreviewPlayer
-            src={playbackSource}
-            title={FEATURED_VIDEO_TITLE}
-          />
+          <PreviewPlayer src={playbackSource} title={FEATURED_VIDEO_TITLE} />
         </div>
         <div className="space-y-4">
           <h3 className="text-xl font-medium">{FEATURED_VIDEO_TITLE}</h3>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            Join us for another exciting episode of The Creative Podcast where we explore 
-            the intersection of creativity and technology. In this episode, we dive deep into 
-            how creators are leveraging Web3 to build sustainable careers.
+            Join us for another exciting episode of The Creative Podcast where
+            we explore the intersection of creativity and technology. In this
+            episode, we dive deep into how creators are leveraging Web3 to build
+            sustainable careers.
           </p>
           <div className="mt-6">
             <h4 className="text-lg font-medium mb-4">Episode Highlights</h4>

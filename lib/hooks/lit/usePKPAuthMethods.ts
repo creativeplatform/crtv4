@@ -5,7 +5,7 @@ import { getSigner } from "@account-kit/core";
 import { config } from "@/config";
 import { useCallback } from "react";
 import { z } from "zod";
-import { getLitClient } from "./lit-client";
+import { getLitClient } from "../../sdk/lit/lit-client";
 import { BytesLike } from "@ethersproject/bytes";
 import { BigNumber } from "@ethersproject/bignumber";
 import { parseUnits } from "@ethersproject/units";

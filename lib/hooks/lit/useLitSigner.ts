@@ -1,9 +1,9 @@
 import { Chain } from "viem";
 import { useCallback, useState } from "react";
-import { getLitClient } from "./lit-client";
-import { useSessionSigs } from "./sessionSigs";
+import { getLitClient } from "../../sdk/lit/lit-client";
+import { useSessionSigs } from "../../sdk/lit/sessionSigs";
 import { useUser } from "@account-kit/react";
-import useModularAccount from "@/lib/hooks/useModularAccount";
+import useModularAccount from "@/lib/hooks/accountkit/useModularAccount";
 
 interface UseLitSignerProps {
   pkpPublicKey: string;

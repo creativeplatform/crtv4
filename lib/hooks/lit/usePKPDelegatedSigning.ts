@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { useCapacityCredits } from "./useCapacityCredits";
-import { usePKPSigning } from "./usePKPSigning";
+import { usePKPSigning } from "../sdk/lit/usePKPSigning";
 import { z } from "zod";
 import { LitNodeClient } from "@lit-protocol/lit-node-client";
 import {

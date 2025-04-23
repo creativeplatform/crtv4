@@ -2,25 +2,19 @@
 
 import { useEffect, useState } from "react";
 import { baseSepolia } from "@account-kit/infra";
-import { useLitSmartAccount } from "@/lib/sdk/lit/useLitSmartAccount";
+import { useLitSmartAccount } from "@/lib/hooks/lit/useLitSmartAccount";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { PKPMintInfo, usePKPMint } from "@/lib/sdk/lit/usePKPMint";
+import { PKPMintInfo, usePKPMint } from "@/lib/hooks/lit/usePKPMint";
 
 export function LitSmartAccount() {
   const [pkp, setPkp] = useState<PKPMintInfo | null>(null);
   const { mintPKP, isReady: isMintReady } = usePKPMint();
-  const {
-    client,
-    address,
-    error,
-    isLoadingClient,
-    isAuthenticated,
-    initializeAccount,
-  } = useLitSmartAccount({
-    pkpPublicKey: pkp?.publicKey || "",
-    chain: baseSepolia,
-  });
+  const { client, address, error, isLoadingClient, isAuthenticated } =
+    useLitSmartAccount({
+      pkpPublicKey: pkp?.publicKey || "",
+      chain: baseSepolia,
+    });
 
   // Handle PKP minting
   const handleMintPKP = async () => {
@@ -40,15 +34,9 @@ export function LitSmartAccount() {
   // Initialize account when PKP is available
   useEffect(() => {
     if (pkp && !client && !error) {
-      initializeAccount().catch((error) => {
-        toast.error(
-          `Failed to initialize account: ${
-            error instanceof Error ? error.message : "Unknown error"
-          }`
-        );
-      });
+      toast.error(`Failed to initialize account.`);
     }
-  }, [pkp, client, error, initializeAccount]);
+  }, [pkp, client, error]);
 
   if (!isMintReady || isLoadingClient) {
     return <div>Loading...</div>;

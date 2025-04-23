@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import useModularAccount from "@/lib/hooks/useModularAccount";
+import useModularAccount from "@/lib/hooks/accountkit/useModularAccount";
 
 /**
  * Component for sending transactions using Account Kit smart account
@@ -65,13 +65,17 @@ export default function SendTransaction() {
 
     try {
       // Convert amount to BigInt (in wei)
-      const valueInWei = amount ? BigInt(Math.floor(parseFloat(amount) * 10 ** 18)) : BigInt(0);
+      const valueInWei = amount
+        ? BigInt(Math.floor(parseFloat(amount) * 10 ** 18))
+        : BigInt(0);
 
       // Send the transaction
       sendUserOperation({
         uo: {
           target: recipient as `0x${string}`,
-          data: data.startsWith("0x") ? (data as `0x${string}`) : ("0x" as `0x${string}`),
+          data: data.startsWith("0x")
+            ? (data as `0x${string}`)
+            : ("0x" as `0x${string}`),
           value: valueInWei,
         },
       });

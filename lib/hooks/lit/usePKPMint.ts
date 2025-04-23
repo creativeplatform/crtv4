@@ -1,9 +1,9 @@
 import { useCallback } from "react";
-import { useLitContext } from "./LitContext";
-import useModularAccount from "@/lib/hooks/useModularAccount";
-import { getContractClient } from "./lit-contracts";
+import useModularAccount from "@/lib/hooks/accountkit/useModularAccount";
+import { getContractClient } from "../../sdk/lit/lit-contracts";
 import { useUser } from "@account-kit/react";
-import { AUTH_METHOD_TYPE, AUTH_METHOD_SCOPE } from "@lit-protocol/constants";
+import { useLitContext } from "./useLitContext";
+import type { ContractReceipt } from "@ethersproject/contracts";
 
 export interface PKPMintInfo {
   tokenId: string;
@@ -38,25 +38,23 @@ export function usePKPMint() {
         throw new Error("Failed to initialize contract client");
       }
 
-      // Mint PKP
-      const { pkp: mintedPkp } = await contractClient.mintWithAuth({
-        authMethod: {
-          authMethodType: AUTH_METHOD_TYPE.EthWallet,
-          accessToken: JSON.stringify({
-            pkp: pkp,
-          }),
-        },
-        scopes: [AUTH_METHOD_SCOPE.SignAnything],
-      });
+      // Mint PKP using ECDSA (keyType = 2)
+      const tx = await contractClient.pkpNftContract.write.mintNext([2]);
+      const receipt = (await tx.wait()) as ContractReceipt;
 
-      if (!mintedPkp.tokenId || !mintedPkp.publicKey || !mintedPkp.ethAddress) {
-        throw new Error("Failed to mint PKP - missing required data");
+      // Get PKP details from receipt
+      const mintEvent = receipt.events?.find(
+        (event) => event.event === "PKPMinted"
+      );
+
+      if (!mintEvent || !mintEvent.args) {
+        throw new Error("Failed to find PKP mint event");
       }
 
       const pkpInfo = {
-        tokenId: mintedPkp.tokenId,
-        publicKey: mintedPkp.publicKey,
-        ethAddress: mintedPkp.ethAddress,
+        tokenId: mintEvent.args.tokenId.toString(),
+        publicKey: mintEvent.args.pubKey,
+        ethAddress: mintEvent.args.ethAddress,
       };
 
       // Update context
@@ -74,7 +72,7 @@ export function usePKPMint() {
         error: error instanceof Error ? error.message : "Failed to mint PKP",
       };
     }
-  }, [client, user?.type, setPKP, pkp]);
+  }, [client, user?.type, setPKP]);
 
   return {
     pkp,

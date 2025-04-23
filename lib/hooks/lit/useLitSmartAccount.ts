@@ -5,7 +5,7 @@ import { useSmartAccountClient } from "@account-kit/react";
 import { baseSepolia } from "@account-kit/infra";
 import { LitNodeClient } from "@lit-protocol/lit-node-client";
 import { LIT_NETWORK } from "@lit-protocol/constants";
-import { useSessionSigs } from "./sessionSigs";
+import { useSessionSigs } from "../../sdk/lit/sessionSigs";
 
 interface UseLitSmartAccountProps {
   pkpPublicKey: string;

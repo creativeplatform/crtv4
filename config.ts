@@ -12,8 +12,8 @@ import {
   mainnet,
 } from "@account-kit/infra";
 import { QueryClient } from "@tanstack/react-query";
-import { modularAccountFactoryAddresses } from "./lib/modularAccount";
-import { SITE_TOPIC_LOGO } from "./lib/utils/context";
+import { modularAccountFactoryAddresses } from "./lib/utils/modularAccount";
+import { SITE_TOPIC_LOGO } from "./context/context";
 import Image from "next/image";
 import React from "react";
 

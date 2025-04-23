@@ -16,7 +16,7 @@ import {
   SITE_NAME,
   SITE_ORG,
   SITE_PRODUCT,
-} from "@/lib/utils/context"; // Correct import path
+} from "@/context/context"; // Correct import path
 import { Button } from "@/components/ui/button"; // Corrected import
 import {
   Dialog,
@@ -50,7 +50,7 @@ import {
   WifiOff,
 } from "lucide-react";
 import type { User as AccountUser } from "@account-kit/signer";
-import useModularAccount from "@/lib/hooks/useModularAccount";
+import useModularAccount from "@/lib/hooks/accountkit/useModularAccount";
 import { createPublicClient, http } from "viem";
 import { mainnet } from "viem/chains";
 import { ArrowBigDown, ArrowBigUp } from "lucide-react";

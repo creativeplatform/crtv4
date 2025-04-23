@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { keccak256, toBytes } from "viem";
-import { getLitClient } from "./lit-client";
+import { getLitClient } from "../../sdk/lit/lit-client";
 import { z } from "zod";
 import { useUser } from "@account-kit/react";
 

@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useLitContext } from "./LitContext";
+import { useLitContext } from "./useLitContext";
 import { getSessionsResponseToJSON } from "livepeer/models/operations";
 import { PKPMintInfo } from "./usePKPMint";
 import { AuthMethod, SessionSigs } from "@lit-protocol/types";

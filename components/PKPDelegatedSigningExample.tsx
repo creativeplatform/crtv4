@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { usePKPDelegatedSigning } from "@/lib/sdk/lit/usePKPDelegatedSigning";
+import { usePKPDelegatedSigning } from "@/lib/hooks/lit/usePKPDelegatedSigning";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";

@@ -11,10 +11,7 @@ import {
 } from "viem";
 import { base, baseSepolia, optimism, polygon, Chain } from "viem/chains";
 
-import {
-  generateAccessKey,
-  validateAccessKey,
-} from "../../../../lib/access-key";
+import { generateAccessKey, validateAccessKey } from "../access-key";
 import { getSmartAccountClient } from "@account-kit/core";
 import { config } from "@/config";
 

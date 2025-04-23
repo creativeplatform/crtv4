@@ -1,6 +1,6 @@
 import { useSmartAccountClient, useUser, useChain } from "@account-kit/react";
 import { baseSepolia } from "@account-kit/infra";
-import { modularAccountFactoryAddresses } from "@/lib/modularAccount";
+import { modularAccountFactoryAddresses } from "@/lib/utils/modularAccount";
 import { Chain } from "viem";
 
 interface UseModularAccountProps {

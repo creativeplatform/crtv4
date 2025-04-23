@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState, useRef } from "react";
-import useModularAccount from "@/lib/hooks/useModularAccount";
-import { usePKPMint } from "@/lib/sdk/lit/usePKPMint";
+import useModularAccount from "@/lib/hooks/accountkit/useModularAccount";
+import { usePKPMint } from "@/lib/hooks/lit/usePKPMint";
 import { useUser } from "@account-kit/react";
 import { useSessionSigs } from "@/lib/sdk/lit/sessionSigs";
 import { toast } from "sonner";

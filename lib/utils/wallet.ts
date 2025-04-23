@@ -1,9 +1,9 @@
 import type { SignerLike } from "@lit-protocol/types";
 import { createPublicClient, http, getAddress } from "viem";
-import { mainnet } from "viem/chains";
+import { baseSepolia } from "viem/chains";
 
 const publicClient = createPublicClient({
-  chain: mainnet,
+  chain: baseSepolia,
   transport: http(),
 });
 

@@ -3,7 +3,7 @@ import { LocalAccountSigner } from "@aa-sdk/core";
 import { sepolia, alchemy } from "@account-kit/infra";
 import { generatePrivateKey } from "viem/accounts";
 import { type Chain } from "viem";
-import { modularAccountFactoryAddresses } from "@/lib/modularAccount";
+import { modularAccountFactoryAddresses } from "@/lib/utils/modularAccount";
 
 interface CreateModularAccountClientParams {
   chain?: Chain;

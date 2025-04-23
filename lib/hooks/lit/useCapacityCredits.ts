@@ -3,8 +3,8 @@ import { LitNodeClient } from "@lit-protocol/lit-node-client";
 import { LIT_NETWORK, LIT_ABILITY } from "@lit-protocol/constants";
 import { SignerLike } from "@lit-protocol/types";
 import { z } from "zod";
-import useModularAccount from "@/lib/hooks/useModularAccount";
-import { getContractClient } from "./lit-contracts";
+import useModularAccount from "@/lib/hooks/accountkit/useModularAccount";
+import { getContractClient } from "../../sdk/lit/lit-contracts";
 import { PKPMintInfo } from "./usePKPMint";
 import { getSigner } from "@account-kit/core";
 import { config } from "@/config";
@@ -24,7 +24,7 @@ import {
   validateAuthParams,
   validateAuthSig,
   validateSigner,
-} from "./types/auth";
+} from "../../sdk/lit/types/auth";
 import { keccak256, toBytes, verifyMessage, recoverMessageAddress } from "viem";
 
 // Error codes for capacity-related operations

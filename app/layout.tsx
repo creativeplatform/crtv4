@@ -6,7 +6,7 @@ import { headers } from "next/headers";
 import "./globals.css";
 import { Providers } from "./providers";
 import Navbar from "@/components/Navbar";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/utils";
 
 const inter = Inter({ subsets: ["latin"] });
 
