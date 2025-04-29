@@ -1,4 +1,4 @@
-// lib/utils/context.ts
+// context/context.ts
 export const SITE_LOGO = "/creative.svg"; // Using the SVG logo
 export const SITE_TOPIC_LOGO =
   "https://bafybeiesvinhgaqvr62rj77jbwkazg3w6bhcrsfyg6zyozasaud53nucnm.ipfs.w3s.link/Creative%20TV%20Logo.png";

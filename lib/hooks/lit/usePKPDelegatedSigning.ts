@@ -1,6 +1,60 @@
+/**
+ * @file usePKPDelegatedSigning.ts
+ * @description React hook for PKP (Programmable Key Pair) delegated signing operations using Lit Protocol.
+ *
+ * This hook enables an advanced Lit Protocol capability where:
+ * - Users can delegate signing authority to another entity using capacity credits
+ * - The delegate can sign messages with the PKP without direct access to the key
+ * - The delegation can be limited to a specific number of signing operations
+ *
+ * The process involves:
+ * 1. Delegating capacity credits to the PKP
+ * 2. Creating a PKP auth method from the delegation
+ * 3. Establishing a session with the Lit Network using the delegation
+ * 4. Signing the message with the PKP using the delegated authority
+ *
+ * @requires LitNodeClient from @lit-protocol/lit-node-client
+ * @requires useCapacityCredits for delegating capacity to a PKP
+ * @requires usePKPSigning for message signing operations
+ * @requires LitPKPResource from @lit-protocol/auth-helpers for defining resource scope
+ *
+ * @param {DelegatedSignParams} params Object containing:
+ *   - message: The message to sign
+ *   - pkpInfo: Information about the PKP (tokenId, publicKey, ethAddress)
+ *   - capacityTokenId: ID of the capacity token to use for delegation
+ *   - sigName: Name for the signature (default: "sig1")
+ *   - maxUses: Maximum number of times the delegation can be used (default: 1)
+ *
+ * @returns {Object} An object containing:
+ *   - signWithDelegation: Function to execute the delegated signing operation
+ *
+ * @example
+ * const { signWithDelegation } = usePKPDelegatedSigning();
+ * const result = await signWithDelegation({
+ *   message: "Hello, world!",
+ *   pkpInfo: {
+ *     tokenId: "123",
+ *     publicKey: "0x...",
+ *     ethAddress: "0x..."
+ *   },
+ *   capacityTokenId: "456",
+ *   maxUses: 5
+ * });
+ *
+ * @dev Notes:
+ * - Uses the Lit Datil network by default
+ * - The delegated signing process requires multiple Lit Protocol API calls
+ * - Utilizes PKP signing with customizable Lit Action code for signing flexibility
+ * - Implements extensive error handling and logging for debugging
+ * - The auth callback pattern follows Lit Protocol's recommended implementation
+ * - Capacity delegation auth signatures have a fixed expiration time (24 hours here)
+ * - Resource ability requests default to 'pkp-signing' for all resources ('*')
+ * - The signing operation uses ethers.utils to prepare the message for signing
+ */
+
 import { useCallback } from "react";
 import { useCapacityCredits } from "./useCapacityCredits";
-import { usePKPSigning } from "../sdk/lit/usePKPSigning";
+import { usePKPSigning } from "./usePKPSigning";
 import { z } from "zod";
 import { LitNodeClient } from "@lit-protocol/lit-node-client";
 import {
@@ -9,8 +63,6 @@ import {
   AUTH_METHOD_TYPE,
 } from "@lit-protocol/constants";
 import { LitPKPResource } from "@lit-protocol/auth-helpers";
-import { getSigner } from "@account-kit/core";
-import { config } from "@/config";
 import type { AuthCallback, AuthCallbackParams } from "@lit-protocol/types";
 
 const DelegatedSignParamsSchema = z.object({

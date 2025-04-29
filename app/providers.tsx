@@ -1,13 +1,14 @@
 "use client";
 import { config, queryClient } from "@/config";
+import { AlchemyAccountProvider } from "@account-kit/react";
 import { AlchemyClientState } from "@account-kit/core";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { PropsWithChildren, useMemo, Suspense } from "react";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "sonner";
 import { VideoProvider } from "../context/VideoContext";
-import { CustomAuthProvider } from "@/components/auth/CustomAuthProvider";
 import { ErrorBoundary } from "next/dist/client/components/error-boundary";
+import { LitProvider } from "@/context/LitContext";
 
 function ErrorFallback({ error }: { error: Error }) {
   return (
@@ -33,14 +34,20 @@ export const Providers = (
         }
       >
         <QueryClientProvider client={queryClient}>
-          <CustomAuthProvider initialState={props.initialState}>
-            <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-              <VideoProvider>
-                {props.children}
-                <Toaster position="top-right" richColors />
-              </VideoProvider>
-            </ThemeProvider>
-          </CustomAuthProvider>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            <AlchemyAccountProvider
+              config={config}
+              queryClient={queryClient}
+              initialState={props.initialState}
+            >
+              <LitProvider>
+                <VideoProvider>
+                  {props.children}
+                  <Toaster position="top-right" richColors />
+                </VideoProvider>
+              </LitProvider>
+            </AlchemyAccountProvider>
+          </ThemeProvider>
         </QueryClientProvider>
       </Suspense>
     </ErrorBoundary>

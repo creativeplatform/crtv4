@@ -1,6 +1,6 @@
 import { createModularAccountV2Client } from "@account-kit/smart-contracts";
 import { LocalAccountSigner } from "@aa-sdk/core";
-import { sepolia, alchemy } from "@account-kit/infra";
+import { baseSepolia, alchemy } from "@account-kit/infra";
 import { generatePrivateKey } from "viem/accounts";
 import { type Chain } from "viem";
 import { modularAccountFactoryAddresses } from "@/lib/utils/modularAccount";
@@ -20,8 +20,8 @@ interface CreateModularAccountClientParams {
  * @returns ModularAccountV2Client instance
  */
 export async function createModularAccountClient({
-  chain = sepolia,
-  apiKey,
+  chain = baseSepolia,
+  apiKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY as string,
   privateKey = generatePrivateKey(),
 }: CreateModularAccountClientParams) {
   // Get the factory address for the chain
@@ -34,7 +34,7 @@ export async function createModularAccountClient({
     mode: "default", // Use default mode for standard functionality
     chain,
     transport: alchemy({
-      apiKey: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY as string,
+      apiKey,
     }),
     signer: LocalAccountSigner.privateKeyToAccountSigner(
       privateKey as `0x${string}`

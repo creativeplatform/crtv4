@@ -1,3 +1,42 @@
+/**
+ * @file usePKPAuthMethods.ts
+ * @description React hook for managing Lit Protocol PKP (Programmable Key Pair) authentication methods.
+ *
+ * This hook provides functionality to:
+ * - Add authentication methods to PKPs (e.g., WebAuthn, OAuth, etc.)
+ * - Remove authentication methods from PKPs
+ * - Retrieve all authentication methods associated with a PKP
+ *
+ * It supports two authentication flows:
+ * 1. PKP Owner flow - where the PKP itself is the signer (requires pkpPublicKey)
+ * 2. External Owner flow - where an external wallet owns the PKP
+ *
+ * @requires LitContracts from @lit-protocol/contracts-sdk
+ * @requires PKPEthersWallet from @lit-protocol/pkp-ethers
+ * @requires getSigner from @account-kit/core
+ * @requires getLitClient for creating a Lit Protocol client instance
+ *
+ * @dev Notes:
+ * - Auth methods are managed via the PKP Permissions contract
+ * - Auth methods require scopes to define their permissions
+ * - The hook uses Zod for runtime validation of configuration
+ * - Transactions require proper gas configuration for Lit Network (default provided)
+ * - Supports various authentication method types via the authMethodType hex identifier
+ * - All contract operations are performed on the Lit Protocol Datil network
+ *
+ * Common auth method types:
+ * - 0x0000000000000000000000000000000000000000000000000000000000000001: WebAuthn
+ * - 0x0000000000000000000000000000000000000000000000000000000000000002: OAuth
+ * - 0x0000000000000000000000000000000000000000000000000000000000000003: Discord
+ * - 0x0000000000000000000000000000000000000000000000000000000000000004: Google
+ *
+ * Common scope values:
+ * - 1: Sign any message
+ * - 2: Sign any transaction
+ * - 3: Sign any authentication message
+ * - 4: Sign any PKP contract invocation
+ */
+
 import { LitContracts } from "@lit-protocol/contracts-sdk";
 import { LIT_NETWORK } from "@lit-protocol/constants";
 import { PKPEthersWallet } from "@lit-protocol/pkp-ethers";

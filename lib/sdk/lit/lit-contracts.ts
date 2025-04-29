@@ -1,3 +1,31 @@
+/**
+ * @file lit-contracts.ts
+ * @description Handles interaction with Lit Protocol smart contracts
+ *
+ * This module provides a singleton pattern for accessing Lit Protocol contracts.
+ * It manages instantiation and connection to the Lit Protocol network, providing
+ * a consistent interface for contract interactions throughout the application.
+ *
+ * Key features:
+ * - Singleton contract client pattern to prevent multiple connections
+ * - Flexible signer configuration (custom or default)
+ * - Built-in error handling and logging
+ * - Compatible with both ethers.js and viem signers
+ *
+ * Usage:
+ * ```
+ * // Using default configuration (from config.ts)
+ * const litContracts = await getContractClient();
+ *
+ * // Or with custom signer
+ * const litContracts = await getContractClient({ signer: yourCustomSigner });
+ * ```
+ *
+ * @dev The client connects to the Datil test network by default
+ * @dev Ensure signers implement the MinimalSigner interface with signMessage and getAddress methods
+ * @dev Contract operations require a proper connection - always check for errors
+ */
+
 import { LitContracts } from "@lit-protocol/contracts-sdk";
 import { LIT_NETWORK } from "@lit-protocol/constants";
 import { getSigner } from "@account-kit/core";

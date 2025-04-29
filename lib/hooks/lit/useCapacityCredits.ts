@@ -1,11 +1,52 @@
+/**
+ * @file useCapacityCredits.ts
+ * @description Custom React hook for managing Lit Protocol Capacity Credits
+ *
+ * This hook provides functionality to:
+ * 1. Mint Capacity Credits NFT tokens for rate-limiting access to Lit Protocol
+ * 2. Delegate capacity from these tokens to PKPs or specific Ethereum addresses
+ *
+ * @dev IMPORTANT IMPLEMENTATION NOTES:
+ *
+ * - Capacity Credits are NFTs that enable rate-limited access to Lit Protocol network
+ * - Rate limits can be configured using requestsPerKilosecond, requestsPerDay, or requestsPerSecond
+ * - The hook requires an initialized ModularAccount client from the useModularAccount hook
+ * - All operations use strong typing with Zod validation to ensure param validity
+ * - Error handling includes detailed error codes and logging for debugging
+ * - The delegation process uses SIWE (Sign-In with Ethereum) messages for authorization
+ * - Auth signatures are verified with comprehensive validation steps
+ *
+ * @usage Example usage:
+ * ```tsx
+ * const { mintCapacityCredits, delegateCapacity, isReady } = useCapacityCredits();
+ *
+ * // Mint new capacity credits
+ * const mintResult = await mintCapacityCredits({
+ *   requestsPerDay: 1000,
+ *   daysUntilUTCMidnightExpiration: 30
+ * });
+ *
+ * // Delegate capacity to a PKP
+ * const delegateResult = await delegateCapacity({
+ *   uses: "PKP Signing",
+ *   capacityTokenId: mintResult.capacityTokenId,
+ *   pkpInfo: {
+ *     tokenId: "1",
+ *     publicKey: "0x...",
+ *     ethAddress: "0x..."
+ *   }
+ * });
+ * ```
+ *
+ * @lastUpdated 2025-04-28
+ */
+
 import { useCallback } from "react";
 import { LitNodeClient } from "@lit-protocol/lit-node-client";
 import { LIT_NETWORK, LIT_ABILITY } from "@lit-protocol/constants";
-import { SignerLike } from "@lit-protocol/types";
 import { z } from "zod";
 import useModularAccount from "@/lib/hooks/accountkit/useModularAccount";
 import { getContractClient } from "../../sdk/lit/lit-contracts";
-import { PKPMintInfo } from "./usePKPMint";
 import { getSigner } from "@account-kit/core";
 import { config } from "@/config";
 import {

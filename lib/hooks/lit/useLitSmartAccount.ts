@@ -1,3 +1,55 @@
+/**
+ * @file useLitSmartAccount.ts
+ * @description React hook that integrates Lit Protocol PKP with Smart Account functionality.
+ *
+ * This hook manages the complete lifecycle of a Lit Protocol Smart Account including:
+ * - Initializing and connecting to the Lit Network
+ * - Minting Programmable Key Pairs (PKPs) when needed
+ * - Authenticating through session signatures
+ * - Maintaining PKP state and authentication status
+ * - Providing access to the underlying Smart Account client
+ *
+ * @requires LitNodeClient from @lit-protocol/lit-node-client
+ * @requires useSmartAccountClient from @account-kit/react
+ * @requires useLitSigner for Lit Protocol signing capabilities
+ * @requires useSessionSigs for session signature management
+ * @requires usePKPMint for minting new PKPs when needed
+ *
+ * @param pkpPublicKey - The public key of the PKP (Programmable Key Pair)
+ * @param chain - The blockchain network configuration (defaults to baseSepolia)
+ *
+ * @returns {Object} An object containing:
+ *   - client: The Smart Account client instance
+ *   - address: The Smart Account wallet address
+ *   - error: Any error that occurred during initialization or authentication
+ *   - isLoadingClient: Boolean indicating if the client is loading
+ *   - isAuthenticated: Boolean indicating authentication status
+ *   - isAuthenticating: Boolean indicating if authentication is in progress
+ *   - isInitialized: Boolean indicating if the hook has been initialized
+ *   - pkpInfo: Information about the PKP including tokenId, publicKey, and ethAddress
+ *   - authenticate: Function to authenticate with Lit Protocol
+ *   - initialize: Function to initialize the Lit Smart Account
+ *
+ * @example
+ * const {
+ *   client,
+ *   address,
+ *   isAuthenticated,
+ *   authenticate,
+ *   pkpInfo
+ * } = useLitSmartAccount({
+ *   pkpPublicKey: "0x...",
+ *   chain: chains.polygon
+ * });
+ *
+ * @dev Notes:
+ * - This hook requires a PKP public key to function properly
+ * - The hook will attempt to mint a new PKP if one is not provided or found
+ * - Initialize must be called before authenticate
+ * - Session signatures are automatically managed and validated
+ * - Uses the Lit Datil network by default
+ */
+
 import { Chain } from "viem";
 import { useCallback, useState } from "react";
 import { useLitSigner } from "./useLitSigner";
@@ -6,7 +58,7 @@ import { baseSepolia } from "@account-kit/infra";
 import { LitNodeClient } from "@lit-protocol/lit-node-client";
 import { LIT_NETWORK } from "@lit-protocol/constants";
 import { useSessionSigs } from "../../sdk/lit/sessionSigs";
-import { usePKPMint, PKPMintInfo } from "./usePKPMint";
+import { usePKPMint } from "./usePKPMint";
 
 interface UseLitSmartAccountProps {
   pkpPublicKey: string;
@@ -92,7 +144,7 @@ export function useLitSmartAccount({
 
       // Get session signatures
       console.log("Getting session signatures...");
-      const sessionSigs = await getSessionSigs();
+      const sessionSigs = await getSessionSigs(pkpPublicKey);
       if (!sessionSigs) throw new Error("Failed to get session signatures");
 
       setState((prev) => ({ ...prev, isInitialized: true }));

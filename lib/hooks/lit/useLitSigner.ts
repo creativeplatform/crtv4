@@ -1,6 +1,40 @@
+/**
+ * @file useLitSigner.ts
+ * @description A React hook that provides Lit Protocol signer functionality.
+ *
+ * This hook manages the lifecycle of a Lit Protocol signer including:
+ * - Initializing a LitNodeClient instance
+ * - Authenticating with Lit Protocol using session signatures
+ * - Validating existing sessions
+ * - Managing authentication state
+ *
+ * @requires LitNodeClient from @lit-protocol/lit-node-client
+ * @requires useSessionSigs from our SDK
+ * @requires useModularAccount for Smart Contract Account integration
+ *
+ * @param pkpPublicKey - The public key of the PKP (Programmable Key Pair)
+ * @param chain - The blockchain network configuration
+ *
+ * @returns {Object} An object containing:
+ *   - signer: The LitNodeClient instance
+ *   - isAuthenticated: Boolean indicating if the user is authenticated
+ *   - error: Any error that occurred during initialization or authentication
+ *   - sessionSigs: The current session signatures
+ *   - initializeSigner: Function to initialize the Lit signer
+ *   - authenticate: Function to authenticate with Lit Protocol
+ *
+ * @example
+ * const { signer, isAuthenticated, error, authenticate } = useLitSigner({
+ *   pkpPublicKey: "0x...",
+ *   chain: chains.polygon
+ * });
+ *
+ * @dev Note: This hook requires a Smart Contract Account (SCA) user type.
+ * It will not work with EOA accounts.
+ */
+
 import { Chain } from "viem";
 import { useCallback, useState } from "react";
-import { getLitClient } from "../../sdk/lit/lit-client";
 import { useSessionSigs } from "../../sdk/lit/sessionSigs";
 import { useUser } from "@account-kit/react";
 import useModularAccount from "@/lib/hooks/accountkit/useModularAccount";
@@ -96,7 +130,7 @@ export function useLitSigner({ pkpPublicKey, chain }: UseLitSignerProps) {
       }
 
       // Get fresh session sigs
-      const sessionSigs = await getSessionSigs();
+      const sessionSigs = await getSessionSigs(pkpPublicKey);
       if (!sessionSigs) throw new Error("Failed to get session signatures");
 
       return signer;
@@ -111,6 +145,7 @@ export function useLitSigner({ pkpPublicKey, chain }: UseLitSignerProps) {
     getSessionSigs,
     user?.type,
     validateSession,
+    pkpPublicKey,
   ]);
 
   return {

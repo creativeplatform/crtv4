@@ -1,3 +1,28 @@
+/**
+ * @file SendTransaction.tsx
+ * @description Provides a UI component for sending transactions using Account Kit's smart account functionality
+ * 
+ * This component enables users to send transactions with their modular smart account using AccountKit.
+ * It supports ETH transfers as well as custom contract interactions through data parameters.
+ * 
+ * Key features:
+ * - Send ETH to any Ethereum address
+ * - Execute custom contract calls with data parameter
+ * - Uses ERC-4337 User Operations for transaction processing
+ * - Integrated with AccountKit for smart account capabilities
+ * - Full transaction status tracking and error handling
+ * 
+ * Usage:
+ * ```tsx
+ * <SendTransaction />
+ * ```
+ * 
+ * @dev Uses BigInt to handle ETH amounts and convert to wei
+ * @dev Validates recipient address and transaction parameters before submission
+ * @dev Provides real-time user feedback through toast notifications
+ * @dev Requires a connected wallet to function
+ */
+
 "use client";
 
 import React, { useState, useEffect } from "react";

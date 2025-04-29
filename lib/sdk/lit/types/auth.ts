@@ -1,14 +1,25 @@
-import { LitPKPResource } from "@lit-protocol/auth-helpers";
-import type { LitNodeClient } from "@lit-protocol/lit-node-client";
 import type { SignerLike } from "@lit-protocol/types";
 import type {
   AuthCallbackParams,
-  AuthSig as LitAuthSig,
+  AuthSig,
   LitResourceAbilityRequest,
+  SessionSigs as LitSessionSigs,
+  SessionSigsMap as LitSessionSigsMap,
 } from "@lit-protocol/types";
 
-// Re-export AuthSig type from Lit Protocol
-export type { LitAuthSig as AuthSig };
+// Extend the SessionSigs type to ensure it has the authSig property
+export interface SessionSigs extends Omit<LitSessionSigsMap, 'string'> {
+  authSig: {
+    sig: string;
+    derivedVia: string;
+    signedMessage: string;
+    address: string;
+    // Add any other properties that exist on AuthSig
+  };
+  expiration: string;
+  // Include any other properties that should be guaranteed
+  [key: string]: AuthSig | string | any; // Allow both AuthSig and string values
+}
 
 // Extend AuthCallbackParams to include pkpPublicKey
 export interface AuthNeededParams extends AuthCallbackParams {
@@ -156,7 +167,7 @@ export function validateAuthParams(params: AuthNeededParams): void {
   });
 }
 
-export async function validateAuthSig(authSig: LitAuthSig): Promise<boolean> {
+export async function validateAuthSig(authSig: AuthSig): Promise<boolean> {
   if (!authSig) {
     console.warn("Auth signature is undefined");
     return false;
@@ -165,7 +176,7 @@ export async function validateAuthSig(authSig: LitAuthSig): Promise<boolean> {
   // Check for required properties
   const requiredProps = ["sig", "derivedVia", "signedMessage", "address"];
   for (const prop of requiredProps) {
-    if (!authSig[prop as keyof LitAuthSig]) {
+    if (!authSig[prop as keyof AuthSig]) {
       console.error(`Missing required property: ${prop}`);
       return false;
     }

@@ -1,5 +1,40 @@
 "use client";
 
+/**
+ * PKPDelegatedSigningExample Component
+ * 
+ * This component demonstrates how to use Lit Protocol's PKP delegated signing capability.
+ * 
+ * Purpose:
+ * - Provides a UI for users to sign messages using their PKP (Programmable Key Pair)
+ * - Demonstrates the delegated signing flow with capacity token usage
+ * - Shows different behavior based on wallet type (EOA vs Smart Contract Account)
+ * 
+ * Dependencies:
+ * - usePKPDelegatedSigning: Custom hook that handles the delegated signing process
+ * - useSessionSigs: Hook that provides information about the current session mode
+ * - UI components from the shadcn/ui library
+ * 
+ * Props:
+ * - pkpInfo: Object containing the PKP token ID, public key, and Ethereum address
+ * - capacityTokenId: The ID of the capacity token used for rate limiting
+ * 
+ * Usage Example:
+ * ```tsx
+ * <PKPDelegatedSigningExample 
+ *   pkpInfo={{
+ *     tokenId: "123",
+ *     publicKey: "0x...",
+ *     ethAddress: "0x..."
+ *   }}
+ *   capacityTokenId="456"
+ * />
+ * ```
+ * 
+ * Note: This component requires a valid Lit Protocol session to function correctly.
+ * The user must be authenticated with Lit Protocol before using this component.
+ */
+
 import { useState } from "react";
 import { usePKPDelegatedSigning } from "@/lib/hooks/lit/usePKPDelegatedSigning";
 import { Button } from "@/components/ui/button";

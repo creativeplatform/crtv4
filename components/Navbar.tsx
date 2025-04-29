@@ -1,13 +1,5 @@
 // components/Navbar.tsx
 "use client";
-import {
-  Sheet,
-  SheetTrigger,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "@/components/ui/sheet"; // Corrected import: relative to current file
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
@@ -26,17 +18,7 @@ import {
   useChain,
   useSmartAccountClient,
 } from "@account-kit/react";
-import { base, baseSepolia, optimism, polygon } from "viem/chains";
-import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import ThemeToggleComponent from "./ThemeToggle/toggleComponent";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { CheckIcon } from "@radix-ui/react-icons";
 import {
@@ -48,22 +30,24 @@ import {
   LogOut,
   Wifi,
   WifiOff,
+  Key,
 } from "lucide-react";
 import type { User as AccountUser } from "@account-kit/signer";
 import useModularAccount from "@/lib/hooks/accountkit/useModularAccount";
 import { createPublicClient, http } from "viem";
-import { mainnet } from "viem/chains";
+import {
+  mainnet,
+  base,
+  baseSepolia,
+  optimism,
+  polygon,
+} from "@account-kit/infra";
 import { ArrowBigDown, ArrowBigUp } from "lucide-react";
-import { LitProtocolStatus } from "./LitProtocolStatus";
 import WertButton from "./wallet/buy/buy-button";
 import { TokenBalance } from "./wallet/balance/TokenBalance";
 import type { Chain as ViemChain } from "viem/chains";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import SessionSigManager from "@/components/lit/GetSessionSigsButton";
+import { AccountDropdown } from "@/components/account-dropdown/AccountDropdown";
 
 type UseUserResult = (AccountUser & { type: "eoa" | "sca" }) | null;
 
@@ -179,6 +163,7 @@ export default function Navbar() {
   const [isArrowUp, setIsArrowUp] = useState(true);
   const { client: smartAccountClient } = useSmartAccountClient({});
   const [isNetworkConnected, setIsNetworkConnected] = useState(true);
+  const [isSessionSigsModalOpen, setIsSessionSigsModalOpen] = useState(false);
 
   // Initialize Viem public client for ENS resolution
   const publicClient = createPublicClient({
@@ -515,171 +500,7 @@ export default function Navbar() {
               <ThemeToggleComponent />
             </div>
             <div>
-              {user ? (
-                <div className="flex items-center gap-2">
-                  <TooltipProvider>
-                    <DropdownMenu>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="outline"
-                              className="flex gap-2 items-center transition-all hover:bg-gray-100 
-                                dark:hover:bg-gray-800 hover:border-blue-500"
-                            >
-                              <div className="relative">
-                                <Image
-                                  src={getChainLogo(currentChain)}
-                                  alt={currentChain.name}
-                                  width={32}
-                                  height={32}
-                                  className="rounded-full"
-                                />
-                                <div className="absolute -bottom-1 -right-1">
-                                  <NetworkStatus
-                                    isConnected={isNetworkConnected}
-                                  />
-                                </div>
-                              </div>
-                              <span>{getChainName(currentChain)}</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <pre className="text-xs">
-                            {getChainTooltip(currentChain)}
-                          </pre>
-                        </TooltipContent>
-                      </Tooltip>
-                      <DropdownMenuContent
-                        align="end"
-                        className="animate-in fade-in-80 slide-in-from-top-5"
-                      >
-                        <DropdownMenuLabel className="font-semibold text-sm text-gray-500 dark:text-gray-400">
-                          Switch Network
-                        </DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        {[base, optimism, baseSepolia, polygon].map((chain) => (
-                          <Tooltip key={chain.id}>
-                            <TooltipTrigger asChild>
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  handleChainSwitch(chain, getChainName(chain))
-                                }
-                                disabled={
-                                  isSettingChain || currentChain.id === chain.id
-                                }
-                                className="flex items-center cursor-pointer hover:bg-gray-100 
-                                  dark:hover:bg-gray-800 transition-colors"
-                              >
-                                <Image
-                                  src={getChainLogo(chain)}
-                                  alt={chain.name}
-                                  width={32}
-                                  height={32}
-                                  className="mr-2 rounded-full"
-                                />
-                                {getChainName(chain)}
-                              </DropdownMenuItem>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <pre className="text-xs">
-                                {getChainTooltip(chain)}
-                              </pre>
-                            </TooltipContent>
-                          </Tooltip>
-                        ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TooltipProvider>
-
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="flex items-center transition-all hover:bg-gray-100 
-                          dark:hover:bg-gray-800 hover:border-blue-500"
-                      >
-                        <div
-                          className={`
-                            h-8 w-8 rounded-full flex items-center justify-center text-white
-                            bg-gradient-to-r from-blue-500 to-purple-500
-                          `}
-                        >
-                          <User className="h-4 w-4" />
-                        </div>
-                        <span className="max-w-[100px] truncate">
-                          {displayAddress || "Loading..."}
-                        </span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="end"
-                      className="w-56 animate-in fade-in-80 slide-in-from-top-5"
-                    >
-                      <DropdownMenuLabel
-                        className="flex items-center cursor-pointer hover:bg-gray-100 
-                          dark:hover:bg-gray-800 rounded px-2 py-1 transition-colors"
-                        onClick={copyToClipboard}
-                      >
-                        <span className="flex-1 font-mono text-sm">
-                          {displayAddress}
-                        </span>
-                        {copySuccess ? (
-                          <CheckIcon className="ml-2 h-4 w-4 text-green-500" />
-                        ) : (
-                          <Copy className="ml-2 h-4 w-4" />
-                        )}
-                      </DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <TokenBalance />
-                      <DropdownMenuSeparator />
-                      <LitProtocolStatus />
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => handleActionClick("buy")}
-                        className="flex items-center cursor-pointer hover:bg-gray-100 
-                          dark:hover:bg-gray-800 transition-colors"
-                      >
-                        <Plus className="mr-2 h-4 w-4 text-green-500" /> Buy
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => handleActionClick("send")}
-                        className="flex items-center cursor-pointer hover:bg-gray-100 
-                          dark:hover:bg-gray-800 transition-colors"
-                      >
-                        <ArrowUpRight className="mr-2 h-4 w-4 text-blue-500" />{" "}
-                        Send
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => handleActionClick("swap")}
-                        className="flex items-center cursor-pointer hover:bg-gray-100 
-                          dark:hover:bg-gray-800 transition-colors"
-                      >
-                        <ArrowUpDown className="mr-2 h-4 w-4 text-purple-500" />{" "}
-                        Swap
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => logout()}
-                        className="flex items-center cursor-pointer hover:bg-gray-100 
-                          dark:hover:bg-gray-800 transition-colors"
-                      >
-                        <LogOut className="mr-2 h-4 w-4 text-red-500" /> Logout
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              ) : (
-                <Button
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 
-                    hover:from-blue-700 hover:to-purple-700 text-white 
-                    transition-all duration-300 hover:shadow-lg"
-                  onClick={() => openAuthModal()}
-                >
-                  Login
-                </Button>
-              )}
+              <AccountDropdown />
             </div>
           </div>
 
@@ -828,10 +649,6 @@ export default function Navbar() {
                         Logout
                       </Button>
                     </div>
-
-                    <div className="pt-2">
-                      <LitProtocolStatus />
-                    </div>
                   </div>
                 ) : (
                   <Button
@@ -885,6 +702,24 @@ export default function Navbar() {
           {/* Account Kit Dialog for actions */}
           <Dialog isOpen={isDialogOpen} onClose={() => setIsDialogOpen(false)}>
             <div className="max-w-md mx-auto">{getDialogContent()}</div>
+          </Dialog>
+
+          {/* Session Signatures Modal */}
+          <Dialog
+            isOpen={isSessionSigsModalOpen}
+            onClose={() => setIsSessionSigsModalOpen(false)}
+          >
+            <div className="max-w-lg mx-auto p-2">
+              <SessionSigManager />
+              <div className="flex justify-end mt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsSessionSigsModalOpen(false)}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
           </Dialog>
         </div>
       </div>

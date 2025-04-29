@@ -1,5 +1,32 @@
 "use client";
 
+/**
+ * LitProtocolStatus Component
+ *
+ * This component manages the Lit Protocol initialization, authentication state,
+ * and session management for the application.
+ *
+ * TECHNICAL OVERVIEW:
+ * - Handles both EOA and SCA wallet types for authentication with Lit Protocol
+ * - Implements retry logic with exponential backoff for initialization failures
+ * - Monitors session signature expiration and triggers re-authentication
+ * - Provides visual feedback to users about the current state of Lit integration
+ *
+ * IMPLEMENTATION NOTES:
+ * - EOA (Externally Owned Account) mode uses standard ECDSA signatures required by Lit
+ * - SCA (Smart Contract Account) mode uses PKPs (Programmable Key Pairs)
+ * - Session signatures expire after a set time and need to be refreshed
+ * - The debounce pattern is used to prevent excessive calls to the Lit network
+ *
+ * INTEGRATION POINTS:
+ * - useModularAccount: Provides the smart account client
+ * - usePKPMint: Handles PKP minting for SCA users
+ * - useSessionSigs: Manages authentication with the Lit network
+ *
+ * @see useSessionSigs in lib/sdk/lit/sessionSigs.ts for implementation details
+ * @see usePKPMint in lib/hooks/lit/usePKPMint.ts for PKP minting logic
+ */
+
 import { useCallback, useEffect, useState, useRef } from "react";
 import useModularAccount from "@/lib/hooks/accountkit/useModularAccount";
 import { usePKPMint } from "@/lib/hooks/lit/usePKPMint";
@@ -8,37 +35,42 @@ import { useSessionSigs } from "@/lib/sdk/lit/sessionSigs";
 import { toast } from "sonner";
 import type { AuthSig } from "@lit-protocol/types";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { InfoIcon } from "lucide-react";
+import { InfoIcon, AlertTriangle, CheckCircle, XCircle, Loader2 } from "lucide-react";
 
 interface InitializationState {
   hasClient: boolean;
   isInitializing: boolean;
   hasSessionSigs: boolean;
-  error: string | null;
+  error: Error | null;
   lastAttempt: number | null;
-  sessionExpiration?: string;
   walletType: "eoa" | "sca" | null;
 }
 
 const DEBOUNCE_DELAY = 1000; // 1 second
 const SESSION_EXPIRY_BUFFER = 5 * 60 * 1000; // 5 minutes in milliseconds
 const MAX_RETRIES = 3;
-const RETRY_DELAY = 2000; // 2 seconds
-
-function isValidDate(date: string | undefined): date is string {
-  if (!date) return false;
-  const timestamp = Date.parse(date);
-  return !isNaN(timestamp);
-}
+const RETRY_BACKOFF = [2000, 5000, 10000]; // Retry delays in ms
 
 export function LitProtocolStatus(): JSX.Element {
   const { smartAccountClient: client } = useModularAccount();
   const { mintPKP } = usePKPMint();
-  const { getSessionSigs, initLitClient, isConnected, isEOAMode } =
-    useSessionSigs();
+  const {
+    getSessionSigs,
+    initLitClient,
+    isConnected,
+    isConnecting,
+    connectionError,
+    isEOAMode,
+    resetClient
+  } = useSessionSigs();
+
   const user = useUser();
   const checkTimeoutRef = useRef<NodeJS.Timeout>();
   const retryCountRef = useRef(0);
+
+  // Define a default pkpPublicKey to be used with getSessionSigs
+  // This empty string is acceptable for anonymous sessions or when not using PKP directly
+  const pkpPublicKey = "";
 
   const [initState, setInitState] = useState<InitializationState>({
     hasClient: false,
@@ -58,102 +90,67 @@ export function LitProtocolStatus(): JSX.Element {
     };
   }, []);
 
-  const checkSessionSigs = useCallback(async () => {
-    try {
-      console.log("Checking session signatures...");
-      const sigs = await getSessionSigs();
+  // Monitor wallet type changes
+  useEffect(() => {
+    setInitState((prev) => ({
+      ...prev,
+      walletType: isEOAMode ? "eoa" : "sca",
+    }));
+  }, [isEOAMode]);
 
-      if (!sigs) {
-        console.log("Session signatures not available");
-        return false;
-      }
+  // Monitor session sigs and client state
+  useEffect(() => {
+    setInitState((prev) => ({
+      ...prev,
+      hasClient: isConnected,
+      hasSessionSigs: isConnected && prev.hasSessionSigs,
+    }));
+  }, [isConnected]);
 
-      const sigsArray = Object.values(sigs);
-      if (!sigsArray.length) {
-        console.log("No session signatures found in array");
-        return false;
-      }
-
-      const firstSig = sigsArray[0] as AuthSig & { expiration?: string };
-      if (!firstSig?.signedMessage || !firstSig?.sig) {
-        console.log("Invalid session signature format");
-        return false;
-      }
-
-      // Validate signature format
-      if (!firstSig.sig.startsWith("0x")) {
-        console.log("Invalid signature format - missing 0x prefix");
-        return false;
-      }
-
-      // Check expiration if available
-      if (isValidDate(firstSig.expiration)) {
-        const expiryTime = new Date(firstSig.expiration).getTime();
-        const currentTime = Date.now();
-        if (currentTime + SESSION_EXPIRY_BUFFER >= expiryTime) {
-          console.log("Session signature expired or expiring soon");
-          toast.warning("Session expiring soon. Please re-authenticate.");
-          return false;
-        }
-
-        // Update state with session expiration
-        setInitState((prev) => ({
-          ...prev,
-          sessionExpiration: firstSig.expiration,
-        }));
-      }
-
-      console.log("Session signatures verified successfully:", {
-        sigCount: sigsArray.length,
-        firstSigFormat: firstSig.sig.slice(0, 10) + "...",
-      });
-      return true;
-    } catch (error) {
-      console.error("Error checking session signatures:", {
-        error,
-        message: error instanceof Error ? error.message : "Unknown error",
-        stack: error instanceof Error ? error.stack : undefined,
-      });
-      return false;
+  // Monitor connection errors
+  useEffect(() => {
+    if (connectionError) {
+      setInitState((prev) => ({
+        ...prev,
+        error: connectionError,
+      }));
     }
-  }, [getSessionSigs]);
+  }, [connectionError]);
 
-  const debouncedCheckSessionSigs = useCallback(() => {
+  // Debounced check for session signatures
+  const debouncedCheckSessionSigs = useCallback(async (): Promise<boolean> => {
     if (checkTimeoutRef.current) {
       clearTimeout(checkTimeoutRef.current);
     }
 
-    return new Promise<boolean>((resolve) => {
+    return new Promise((resolve) => {
       checkTimeoutRef.current = setTimeout(async () => {
-        const result = await checkSessionSigs();
-        resolve(result);
+        try {
+          const sigs = await getSessionSigs(pkpPublicKey);
+          if (sigs) {
+            setInitState((prev) => ({ ...prev, hasSessionSigs: true }));
+            resolve(true);
+          } else {
+            setInitState((prev) => ({ ...prev, hasSessionSigs: false }));
+            resolve(false);
+          }
+        } catch (error) {
+          console.error("Failed to check session signatures:", error);
+          setInitState((prev) => ({
+            ...prev,
+            hasSessionSigs: false,
+            error: error instanceof Error ? error : new Error("Failed to verify session")
+          }));
+          resolve(false);
+        }
       }, DEBOUNCE_DELAY);
     });
-  }, [checkSessionSigs]);
+  }, [getSessionSigs, pkpPublicKey]);
 
-  const handleInitializeLit = useCallback(async () => {
-    console.log("Starting Lit Protocol initialization...", {
-      currentState: initState,
-      hasClient: !!client,
-      userType: user?.type,
-      isEOAMode,
-      retryCount: retryCountRef.current,
-      timestamp: new Date().toISOString(),
-    });
-
+  // Run initialization with retry capability
+  const runInitialization = useCallback(async () => {
+    // Prevent concurrent initialization
     if (initState.isInitializing) {
-      console.log("Initialization already in progress");
-      return;
-    }
-
-    if (retryCountRef.current >= MAX_RETRIES) {
-      const error = "Max retry attempts reached. Please try again later.";
-      console.error(error);
-      setInitState((prev) => ({
-        ...prev,
-        isInitializing: false,
-        error,
-      }));
       return;
     }
 
@@ -173,6 +170,11 @@ export function LitProtocolStatus(): JSX.Element {
       if (!isConnected) {
         console.log("Initializing Lit client...");
         await initLitClient();
+
+        // If still not connected after attempt, throw
+        if (!isConnected) {
+          throw new Error("Failed to connect to Lit Network");
+        }
       }
 
       // Check session signatures with debouncing
@@ -185,6 +187,11 @@ export function LitProtocolStatus(): JSX.Element {
       if (!isEOAMode) {
         console.log("SCA detected, proceeding with PKP minting...");
         const result = await mintPKP();
+
+        if (!result.success) {
+          throw new Error(result.error || "PKP minting failed");
+        }
+
         console.log("PKP minting successful:", {
           result,
           timestamp: new Date().toISOString(),
@@ -221,128 +228,133 @@ export function LitProtocolStatus(): JSX.Element {
       // Increment retry count and schedule retry if under max attempts
       retryCountRef.current++;
       if (retryCountRef.current < MAX_RETRIES) {
-        console.log(`Retrying initialization in ${RETRY_DELAY}ms...`);
-        setTimeout(() => handleInitializeLit(), RETRY_DELAY);
-      }
+        const retryDelay = RETRY_BACKOFF[retryCountRef.current - 1] || RETRY_BACKOFF[0];
+        console.log(`Scheduling retry ${retryCountRef.current} in ${retryDelay}ms`);
 
-      setInitState((prev) => ({
-        ...prev,
-        hasClient: !!client,
-        isInitializing: retryCountRef.current < MAX_RETRIES,
-        hasSessionSigs: false,
-        error: errorMessage,
-        lastAttempt: Date.now(),
-      }));
+        setTimeout(() => {
+          setInitState((prev) => ({ ...prev, isInitializing: false }));
+          runInitialization();
+        }, retryDelay);
 
-      if (retryCountRef.current >= MAX_RETRIES) {
-        toast.error(
-          `Failed to initialize Lit Protocol after ${MAX_RETRIES} attempts. Please try again later.`
-        );
+        setInitState((prev) => ({
+          ...prev,
+          error: new Error(`${errorMessage} - Retrying...`),
+          lastAttempt: Date.now(),
+        }));
       } else {
-        toast.error(`Failed to initialize Lit Protocol: ${errorMessage}`);
+        // Max retries reached, reset client and show error
+        await resetClient();
+
+        setInitState((prev) => ({
+          ...prev,
+          isInitializing: false,
+          error: new Error(`${errorMessage} - Max retries reached`),
+          lastAttempt: Date.now(),
+        }));
+
+        toast.error(`Lit Protocol initialization failed: ${errorMessage}`);
       }
     }
   }, [
     client,
-    user?.type,
+    isConnected,
+    isEOAMode,
+    initLitClient,
+    debouncedCheckSessionSigs,
     mintPKP,
     initState.isInitializing,
-    debouncedCheckSessionSigs,
-    isConnected,
-    initLitClient,
-    isEOAMode,
+    resetClient,
   ]);
 
-  // Check for session expiry periodically
+  // Auto-initialize when dependencies are ready
   useEffect(() => {
-    if (
-      !initState.sessionExpiration ||
-      !isValidDate(initState.sessionExpiration)
-    )
-      return;
-
-    const checkInterval = setInterval(() => {
-      const expiryTime = new Date(
-        initState.sessionExpiration as string
-      ).getTime();
-      const currentTime = Date.now();
-
-      if (currentTime + SESSION_EXPIRY_BUFFER >= expiryTime) {
-        console.log("Session expired, triggering re-authentication");
-        toast.warning("Session expired. Please re-authenticate.");
-        setInitState((prev) => ({
-          ...prev,
-          hasSessionSigs: false,
-          error: "Session expired",
-        }));
-      }
-    }, SESSION_EXPIRY_BUFFER);
-
-    return () => clearInterval(checkInterval);
-  }, [initState.sessionExpiration]);
-
-  useEffect(() => {
-    console.log("LitProtocolStatus effect triggered:", {
-      hasClient: !!client,
-      userType: user?.type,
-      currentState: initState,
-      timestamp: new Date().toISOString(),
-    });
-
-    if (
-      !initState.isInitializing &&
-      !initState.error &&
-      !initState.lastAttempt &&
-      client &&
-      user?.type === "sca"
-    ) {
-      handleInitializeLit();
+    if (!initState.isInitializing && !initState.hasClient && client && user?.type) {
+      runInitialization();
     }
-  }, [client, user?.type, handleInitializeLit, initState]);
+  }, [client, user?.type, initState.isInitializing, initState.hasClient, runInitialization]);
+
+  // Provides a way for users to manually trigger initialization
+  const handleManualInit = () => {
+    // Reset retry count to ensure we get a full set of retries
+    retryCountRef.current = 0;
+    runInitialization();
+  };
+
+  if (!user?.type) {
+    return (
+      <Alert variant="default">
+        <InfoIcon className="h-4 w-4" />
+        <AlertTitle>Lit Protocol Status</AlertTitle>
+        <AlertDescription>
+          Connect your wallet to enable Lit Protocol features
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (initState.isInitializing) {
+    return (
+      <Alert variant="default">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        <AlertTitle>Initializing Lit Protocol</AlertTitle>
+        <AlertDescription>
+          {isConnecting ? (
+            "Connecting to Lit Network..."
+          ) : (
+            isEOAMode ?
+              "Setting up EOA authentication..." :
+              "Setting up smart account integration..."
+          )}
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (initState.error) {
+    return (
+      <Alert variant="destructive">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>Lit Protocol Error</AlertTitle>
+        <AlertDescription className="flex flex-col gap-2">
+          <p>{initState.error.message}</p>
+          <button
+            onClick={handleManualInit}
+            className="text-xs underline cursor-pointer mt-2"
+          >
+            Retry initialization
+          </button>
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (initState.hasClient && initState.hasSessionSigs) {
+    return (
+      <Alert variant="default" className="bg-green-50 border-green-200">
+        <CheckCircle className="h-4 w-4 text-green-500" />
+        <AlertTitle>Lit Protocol Active</AlertTitle>
+        <AlertDescription>
+          {isEOAMode
+            ? "Using EOA authentication with Lit Protocol"
+            : "Smart account connected to Lit Protocol"}
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   return (
-    <div className="space-y-4">
-      {initState.walletType && (
-        <Alert>
-          <InfoIcon className="h-4 w-4" />
-          <AlertTitle>
-            Using {initState.walletType.toUpperCase()} Mode
-          </AlertTitle>
-          <AlertDescription>
-            {initState.walletType === "eoa"
-              ? "Using standard ECDSA signatures for Lit Protocol authentication."
-              : "Using PKP for Lit Protocol authentication with your Smart Contract Account."}
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {initState.error ? (
-        <div className="flex items-center gap-2 px-3 py-2 text-sm text-red-500 bg-red-50 rounded-md">
-          <div className="w-2 h-2 bg-red-500 rounded-full" />
-          <span>Failed to initialize Lit Protocol: {initState.error}</span>
-          <button
-            onClick={handleInitializeLit}
-            className="px-2 py-1 ml-2 text-xs text-red-600 border border-red-300 rounded hover:bg-red-100"
-          >
-            Retry
-          </button>
-        </div>
-      ) : initState.isInitializing ? (
-        <div className="flex items-center gap-2 px-3 py-2 text-sm text-blue-500 bg-blue-50 rounded-md">
-          <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-          <span>Initializing Lit Protocol...</span>
-        </div>
-      ) : !initState.hasClient || !initState.hasSessionSigs ? (
-        <div className="flex items-center gap-2 px-3 py-2 text-sm text-yellow-500 bg-yellow-50 rounded-md">
-          <div className="w-2 h-2 bg-yellow-500 rounded-full" />
-          <span>Waiting for initialization...</span>
-        </div>
-      ) : (
-        <div className="flex items-center gap-2 px-3 py-2 text-sm text-green-500 bg-green-50 rounded-md">
-          <div className="w-2 h-2 bg-green-500 rounded-full" />
-          <span>Lit Protocol initialized successfully</span>
-        </div>
-      )}
-    </div>
+    <Alert variant="default">
+      <InfoIcon className="h-4 w-4" />
+      <AlertTitle>Lit Protocol Status</AlertTitle>
+      <AlertDescription className="flex flex-col gap-2">
+        <p>Waiting for initialization...</p>
+        <button
+          onClick={handleManualInit}
+          className="text-xs underline cursor-pointer mt-2"
+        >
+          Initialize Lit Protocol
+        </button>
+      </AlertDescription>
+    </Alert>
   );
 }
