@@ -16,6 +16,8 @@ export const DemoPlayer: React.FC<{ src: Src[] | null; title: string }> = ({
   const { currentPlayingId, setCurrentPlayingId } = useVideo();
   const playerId = useRef(Math.random().toString(36).substring(7)).current;
 
+  
+
   useEffect(() => {
     resetFadeTimeout();
     return () => {
@@ -40,6 +42,7 @@ export const DemoPlayer: React.FC<{ src: Src[] | null; title: string }> = ({
   }
 
   const resetFadeTimeout = () => {
+
     if (fadeTimeoutRef.current) {
       clearTimeout(fadeTimeoutRef.current);
     }
