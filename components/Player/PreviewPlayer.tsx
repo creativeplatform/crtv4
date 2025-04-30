@@ -18,7 +18,7 @@ export const PreviewPlayer: React.FC<{ src: Src[]; title: string }> = ({
   title,
 }) => {
   const [controlsVisible, setControlsVisible] = useState(true);
-  const fadeTimeoutRef = useRef<NodeJS.Timeout>();
+  const fadeTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Extract playback ID from the source

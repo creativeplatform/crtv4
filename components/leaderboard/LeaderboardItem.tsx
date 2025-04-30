@@ -14,7 +14,6 @@ interface LeaderboardItemProps {
   hideRank?: boolean;
   hidePoints?: boolean;
 }
-
 export default function LeaderboardItem({
   rank,
   address,
@@ -22,14 +21,10 @@ export default function LeaderboardItem({
   isCurrentUser,
   hideRank = false,
   hidePoints = false,
-}: LeaderboardItemProps) {
-  return (
-    <div
-      className={`flex items-center space-x-4 ${!hideRank ? 'p-3 rounded-md' : ''} ${
-        isCurrentUser && !hideRank
-          ? "bg-blue-100 dark:bg-blue-900/30"
-          : hideRank ? "" : "hover:bg-gray-100 dark:hover:bg-gray-800"
-      }`}
+}: Readonly<LeaderboardItemProps>) {
+  const rankStyle = !hideRank ? 'p-3 rounded-md' : '';
+   return (
+    <div className={`flex items-center space-x-4 ${rankStyle}`}
     >
       {!hideRank && (
         <span className="min-w-[24px] text-right font-medium">{rank}.</span>
