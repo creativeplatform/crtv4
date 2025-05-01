@@ -804,7 +804,11 @@ export function AccountDropdown() {
                   <DropdownMenuItem
                     onClick={() => handleChainSwitch(chain)}
                     disabled={isSettingChain || chain.id === chain.id}
-                    className="flex items-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    className={`
+                      flex items-center cursor-pointer
+                      hover:bg-gray-100 dark:hover:bg-gray-800
+                      transition-colors
+                    `}
                   >
                     <Image
                       src={getChainIcon(chain)}
@@ -846,7 +850,8 @@ export function AccountDropdown() {
         <DropdownMenuContent className="w-[320px] md:w-80" align="end">
           <DropdownMenuLabel className="font-normal">
             <div
-              className="flex items-center justify-between cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 rounded px-2 py-1 transition-colors"
+              className={`flex items-center justify-between cursor-pointer 
+              hover:bg-gray-100 dark:hover:bg-gray-800 rounded px-2 py-1 transition-colors`}
               onClick={copyToClipboard}
             >
               <div className="flex flex-col space-y-1">

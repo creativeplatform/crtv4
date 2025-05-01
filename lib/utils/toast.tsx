@@ -1,10 +1,18 @@
 import * as React from "react";
 import { toast } from "@/components/ui/use-toast";
+import type { ToastVariant } from "@/components/ui/use-toast";
 
 interface TransactionToastConfig {
   hash: string;
   chainId: number;
   description?: string;
+}
+
+interface ToastOptions {
+  title: string;
+  description?: string;
+  variant?: ToastVariant;
+  action?: React.ReactElement;
 }
 
 export function showTransactionToast({
@@ -14,8 +22,12 @@ export function showTransactionToast({
 }: TransactionToastConfig) {
   const explorerUrl = getExplorerUrl(chainId, hash);
 
+  function createToast(options: ToastOptions) {
+    return toast(options);
+  }
+
   // Show pending toast
-  const { id } = toast({
+  const pendingToast = createToast({
     title: "Transaction Submitted",
     description:
       description || "Your transaction has been submitted to the network.",
@@ -35,8 +47,8 @@ export function showTransactionToast({
   // Update toast when transaction is confirmed
   return {
     success: () => {
-      toast({
-        id,
+      pendingToast.dismiss();
+      createToast({
         title: "Transaction Confirmed",
         description: description || "Your transaction has been confirmed.",
         variant: "success",
@@ -53,8 +65,8 @@ export function showTransactionToast({
       });
     },
     error: (error: Error) => {
-      toast({
-        id,
+      pendingToast.dismiss();
+      createToast({
         title: "Transaction Failed",
         description: error.message || "Your transaction has failed.",
         variant: "destructive",
