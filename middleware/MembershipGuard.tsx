@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useMembershipVerification } from "@/hooks/useMembershipVerification";
+import { useMembershipVerification } from "@/lib/hooks/useMembershipVerification";
 import { Loader2 } from "lucide-react";
 
 interface MembershipGuardProps {

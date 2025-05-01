@@ -1,24 +1,48 @@
 import { Button } from "@/components/ui/button";
-import { useMembershipVerification } from "@/hooks/useMembershipVerification";
+import {
+  useMembershipVerification,
+  type MembershipDetails,
+} from "../../lib/hooks/useMembershipVerification";
 import { LoginWithEthereumButton } from "@/components/auth/LoginWithEthereumButton";
-import { Loader2, LockKeyhole, ShieldCheck, ShieldX } from "lucide-react";
-import { useUser, useSmartAccountClient } from "@account-kit/react";
+import {
+  Loader2,
+  LockKeyhole,
+  ShieldCheck,
+  ShieldX,
+  AlertTriangle,
+} from "lucide-react";
+import {
+  LOCK_ADDRESSES,
+  type LockAddressValue,
+} from "../../lib/sdk/unlock/services";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface MembershipSectionProps {
   className?: string;
 }
 
-const MEMBERSHIP_NAMES = {
-  "0xf7c4cd399395d80f9d61fde833849106775269c6": "Creative Pass",
-  "0x13b818daf7016b302383737ba60c3a39fef231cf": "Creative Pass Plus",
-  "0x9c3744c96200a52d05a630d4aec0db707d7509be": "Creative Pass Pro",
+const MEMBERSHIP_NAMES: Record<LockAddressValue, string> = {
+  [LOCK_ADDRESSES.BASE_CREATIVE_PASS]: "Creative Pass",
+  [LOCK_ADDRESSES.BASE_CREATIVE_PASS_2]: "Creative Pass Plus",
+  [LOCK_ADDRESSES.BASE_CREATIVE_PASS_3]: "Creative Pass Pro",
 } as const;
+
+const ERROR_MESSAGES: Record<string, string> = {
+  LOCK_NOT_FOUND: "Unable to verify membership. Please try again later.",
+  BALANCE_CHECK_ERROR:
+    "Unable to check membership status. Please try again later.",
+  MEMBERSHIP_CHECK_ERROR: "Error verifying membership. Please try again later.",
+  INVALID_ADDRESS: "Invalid wallet address. Please reconnect your wallet.",
+  NO_VALID_ADDRESS: "Please connect your wallet to verify membership.",
+  PROVIDER_ERROR: "Network connection error. Please try again later.",
+  LOCK_FETCH_ERROR:
+    "Unable to fetch membership details. Basic verification will continue.",
+  DEFAULT: "An error occurred while verifying membership.",
+};
 
 export function MembershipSection({ className }: MembershipSectionProps) {
   const { isVerified, hasMembership, isLoading, error, membershipDetails } =
     useMembershipVerification();
-  const user = useUser();
-  const { client: accountKitClient } = useSmartAccountClient({});
 
   if (isLoading) {
     return (
@@ -28,22 +52,15 @@ export function MembershipSection({ className }: MembershipSectionProps) {
     );
   }
 
-  // If using Account Kit but no SCA yet, show buy membership
-  if (user && !user?.type && !accountKitClient?.account?.address) {
+  if (error) {
+    const errorMessage = ERROR_MESSAGES[error.code] || ERROR_MESSAGES.DEFAULT;
     return (
-      <div className="px-2 py-2 space-y-2">
-        <div className="flex items-center gap-2 text-sm text-yellow-500">
-          <LockKeyhole className="h-4 w-4" />
-          <span>No active membership</span>
-        </div>
-        <Button
-          className="w-full bg-black hover:bg-gray-900 text-white"
-          onClick={() => {
-            window.location.href = "https://memberships.creativeplatform.xyz";
-          }}
-        >
-          Get Membership
-        </Button>
+      <div className="p-4 space-y-4">
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>{errorMessage}</AlertDescription>
+        </Alert>
+        <LoginWithEthereumButton />
       </div>
     );
   }
@@ -70,7 +87,7 @@ export function MembershipSection({ className }: MembershipSectionProps) {
         <Button
           className="w-full bg-black hover:bg-gray-900 text-white"
           onClick={() => {
-            window.location.href = "https://memberships.creativeplatform.xyz";
+            window.open("https://memberships.creativeplatform.xyz", "_blank");
           }}
         >
           Get Membership
@@ -88,22 +105,26 @@ export function MembershipSection({ className }: MembershipSectionProps) {
       {membershipDetails && membershipDetails.length > 0 && (
         <div className="space-y-2">
           {membershipDetails
-            .filter(({ balance }) => balance > BigInt(0))
-            .map(({ lockAddress, balance }) => (
+            .filter(({ isValid }: MembershipDetails) => isValid)
+            .map(({ name, address, lock }: MembershipDetails) => (
               <div
-                key={lockAddress}
+                key={address}
                 className="flex items-center justify-between text-xs"
               >
                 <span className="text-muted-foreground">
-                  {
-                    MEMBERSHIP_NAMES[
-                      lockAddress as keyof typeof MEMBERSHIP_NAMES
-                    ]
-                  }
+                  {MEMBERSHIP_NAMES[address]}
                 </span>
                 <span className="font-medium">
-                  {balance.toString()}{" "}
-                  {balance === BigInt(1) ? "pass" : "passes"}
+                  {lock?.name || "Active"}
+                  {lock?.expirationDuration && (
+                    <span className="ml-1 text-muted-foreground">
+                      (Expires:{" "}
+                      {new Date(
+                        lock.expirationDuration * 1000
+                      ).toLocaleDateString()}
+                      )
+                    </span>
+                  )}
                 </span>
               </div>
             ))}

@@ -1310,6 +1310,11 @@
   resolved "https://registry.npmjs.org/@floating-ui/utils/-/utils-0.2.9.tgz#50dea3616bc8191fb8e112283b49eaff03e78429"
   integrity sha512-MDWhGtE+eHw5JW7lq4qhc5yRLS11ERl1c7Z6Xd0a58DozHES6EnNNwUWbMiG4J9Cgj053Bhk8zvlhFYKVhULwg==
 
+"@graphql-typed-document-node/core@^3.2.0":
+  version "3.2.0"
+  resolved "https://registry.npmjs.org/@graphql-typed-document-node/core/-/core-3.2.0.tgz#5f3d96ec6b2354ad6d8a28bf216a1d97b5426861"
+  integrity sha512-mB9oAsNCm9aM3/SOv4YtBMqZbYj10R7dkq8byBqxGY/ncFwhf2oQzMV+LCRlWoDSEBJ3COiR1yeDvMtsoOsuFQ==
+
 "@hapi/hoek@^9.0.0", "@hapi/hoek@^9.3.0":
   version "9.3.0"
   resolved "https://registry.npmjs.org/@hapi/hoek/-/hoek-9.3.0.tgz#8368869dcb735be2e7f5cb7647de78e167a251fb"
@@ -4013,6 +4018,27 @@
   version "1.3.0"
   resolved "https://registry.npmjs.org/@ungap/structured-clone/-/structured-clone-1.3.0.tgz#d06bbb384ebcf6c505fde1c3d0ed4ddffe0aaff8"
   integrity sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==
+
+"@unlock-protocol/contracts@^0.0.35":
+  version "0.0.35"
+  resolved "https://registry.npmjs.org/@unlock-protocol/contracts/-/contracts-0.0.35.tgz#a7f0e30da73216b8d594f12e93e281463f2f80bd"
+  integrity sha512-tEoYPf/Nw0G3TKGYYp2bK5+jqk/4RDcHwJOJCc9umfDHOUoVo5YXWcLN36SHNP6kCe40DdyVE3EmHNX+Brx9hg==
+
+"@unlock-protocol/paywall@^0.8.1":
+  version "0.8.1"
+  resolved "https://registry.npmjs.org/@unlock-protocol/paywall/-/paywall-0.8.1.tgz#b847a2af23612d477a3e17951bf7608a5caef6e4"
+  integrity sha512-V7228yztC2oiGEHUlWiJCgU1ntkvT41tVz3oIKYdW7vVG/DEZ6TJQfE+/LVHy4fzT5qDZbflPWp0+bcRQqHgmQ==
+  dependencies:
+    postmate "1.5.2"
+
+"@unlock-protocol/unlock-js@^0.51.2":
+  version "0.51.2"
+  resolved "https://registry.npmjs.org/@unlock-protocol/unlock-js/-/unlock-js-0.51.2.tgz#b391695afd89f0f616340dc5b39e754626a3e046"
+  integrity sha512-NR1Gi8NqjZUPVnKtvfnlGP1dI32x9Q5wz+mTXwOG1JVCWwXn472mA/Zq2XT0dGjQOIyx8LDRjiEZQWKqfo45Pg==
+  dependencies:
+    graphql "16.10.0"
+    graphql-request "7.1.2"
+    siwe "3.0.0"
 
 "@unrs/resolver-binding-darwin-arm64@1.6.1":
   version "1.6.1"
@@ -7176,6 +7202,18 @@ graphemer@^1.4.0:
   resolved "https://registry.npmjs.org/graphemer/-/graphemer-1.4.0.tgz#fb2f1d55e0e3a1849aeffc90c4fa0dd53a0e66c6"
   integrity sha512-EtKwoO6kxCL9WO5xipiHTZlSzBm7WLT627TqC/uVRd0HKmq8NXyebnNYxDoBi7wt8eTWrUrKXCOVaFq9x1kgag==
 
+graphql-request@7.1.2:
+  version "7.1.2"
+  resolved "https://registry.npmjs.org/graphql-request/-/graphql-request-7.1.2.tgz#52d7fd6d8d08c9f0b00c84a091376ce9fbdfa945"
+  integrity sha512-+XE3iuC55C2di5ZUrB4pjgwe+nIQBuXVIK9J98wrVwojzDW3GMdSBZfxUk8l4j9TieIpjpggclxhNEU9ebGF8w==
+  dependencies:
+    "@graphql-typed-document-node/core" "^3.2.0"
+
+graphql@16.10.0:
+  version "16.10.0"
+  resolved "https://registry.npmjs.org/graphql/-/graphql-16.10.0.tgz#24c01ae0af6b11ea87bf55694429198aaa8e220c"
+  integrity sha512-AjqGKbDGUFRKIRCP9tCKiIGHyriz2oHEbPIbEtcSLSs4YjReZOIPQQWek4+6hjw62H9QShXHyaGivGiYVLeYFQ==
+
 h3@^1.15.0:
   version "1.15.1"
   resolved "https://registry.npmjs.org/h3/-/h3-1.15.1.tgz#59d6f70d7ef619fad74ecdf465a08fff898033bb"
@@ -9948,6 +9986,11 @@ postcss@^8, postcss@^8.4.47:
     picocolors "^1.1.1"
     source-map-js "^1.2.1"
 
+postmate@1.5.2:
+  version "1.5.2"
+  resolved "https://registry.npmjs.org/postmate/-/postmate-1.5.2.tgz#d59a78b3780023c5d32225fd40633b364958bdb3"
+  integrity sha512-EHLlEmrUA/hALls49oBrtE7BzDXXjB9EiO4MZpsoO3R/jRuBmD+2WKQuYAbeuVEpTzrPpUTT79z2cz4qaFgPRg==
+
 preact@^10.16.0, preact@^10.24.2:
   version "10.26.5"
   resolved "https://registry.npmjs.org/preact/-/preact-10.26.5.tgz#7e1e998af178f139e4c7cb53f441bf2179f44ad2"
@@ -10871,7 +10914,7 @@ sisteransi@^1.0.5:
   resolved "https://registry.npmjs.org/sisteransi/-/sisteransi-1.0.5.tgz#134d681297756437cc05ca01370d3a7a571075ed"
   integrity sha512-bLGGlR1QxBcynn2d5YmDX4MGjlZvy2MRBDRNHLJ8VI6l6+9FUiyTFNJ0IveOSP0bcXgVDPRcfGqA0pjaqUpfVg==
 
-siwe@^3.0.0:
+siwe@3.0.0, siwe@^3.0.0:
   version "3.0.0"
   resolved "https://registry.npmjs.org/siwe/-/siwe-3.0.0.tgz#0508c3fca521c476a07d907a9b5b96a03c27c0f2"
   integrity sha512-P2/ry7dHYJA6JJ5+veS//Gn2XDwNb3JMvuD6xiXX8L/PJ1SNVD4a3a8xqEbmANx+7kNQcD8YAh1B9bNKKvRy/g==
