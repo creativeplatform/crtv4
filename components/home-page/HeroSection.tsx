@@ -1,16 +1,16 @@
-'use client';
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+"use client";
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   HERO_NAME,
   HERO_DESCRIPTION,
   HERO_BUTTONS,
-  HERO_VIDEO_TITLE
-} from '../../lib/utils/context';
-import { Src } from '@livepeer/react';
-import { DemoPlayer } from '../Player/DemoPlayer';
-import { PlayerLoading } from '../Player/Player';
-import { getHeroPlaybackSource } from '../../lib/utils/hooks/useHeroPlaybackSource';
+  HERO_VIDEO_TITLE,
+} from "../../context/context";
+import { Src } from "@livepeer/react";
+import { DemoPlayer } from "../Player/DemoPlayer";
+import { PlayerLoading } from "../Player/Player";
+import { getHeroPlaybackSource } from "../../lib/hooks/livepeer/useHeroPlaybackSource";
 
 // Custom PlayIcon component
 const PlayIcon = (props: React.SVGProps<SVGSVGElement>) => {
@@ -23,10 +23,7 @@ const PlayIcon = (props: React.SVGProps<SVGSVGElement>) => {
       xmlns="http://www.w3.org/2000/svg"
       {...props}
     >
-      <path
-        d="M8 5V19L19 12L8 5Z"
-        fill="currentColor"
-      />
+      <path d="M8 5V19L19 12L8 5Z" fill="currentColor" />
     </svg>
   );
 };
@@ -43,11 +40,11 @@ const HeroSection: React.FC = () => {
         const playbackSource = await getHeroPlaybackSource();
         setSrc(playbackSource);
         if (!playbackSource) {
-          setError('No video source available.');
+          setError("No video source available.");
         }
       } catch (err) {
-        console.error('Error fetching playback source:', err);
-        setError('Failed to load video.');
+        console.error("Error fetching playback source:", err);
+        setError("Failed to load video.");
       } finally {
         setLoading(false);
       }
@@ -76,8 +73,8 @@ const HeroSection: React.FC = () => {
           <div className="flex flex-col space-y-4 sm:flex-row sm:space-x-6 sm:space-y-0">
             <button
               className={
-                'flex items-center space-x-2 rounded-full bg-pink-500 px-6 py-2 text-lg font-normal text-white ' +
-                'transition duration-200 hover:bg-pink-600 lg:py-3'
+                "flex items-center space-x-2 rounded-full bg-pink-500 px-6 py-2 text-lg font-normal text-white " +
+                "transition duration-200 hover:bg-pink-600 lg:py-3"
               }
               onClick={() => router.push(HERO_BUTTONS.secondary.href)}
             >
@@ -113,7 +110,7 @@ export default HeroSection;
 export const Blob = (props: React.SVGProps<SVGSVGElement>) => {
   return (
     <svg
-      width={'100%'}
+      width={"100%"}
       viewBox="0 0 578 440"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
@@ -123,11 +120,11 @@ export const Blob = (props: React.SVGProps<SVGSVGElement>) => {
         fillRule="evenodd"
         clipRule="evenodd"
         d={
-          'M239.184 439.443c-55.13-5.419-110.241-21.365-151.074-58.767C42.307 338.722-7.478 282.729.938 ' +
-          '221.217c8.433-61.644 78.896-91.048 126.871-130.712 34.337-28.388 70.198-51.348 112.004-66.78C282.34 8.024 ' +
-          '325.382-3.369 370.518.904c54.019 5.115 112.774 10.886 150.881 49.482 39.916 40.427 49.421 100.753 53.385 ' +
-          '157.402 4.13 59.015 11.255 128.44-30.444 170.44-41.383 41.683-111.6 19.106-169.213 30.663-46.68 9.364-88.56 ' +
-          '35.21-135.943 30.551z'
+          "M239.184 439.443c-55.13-5.419-110.241-21.365-151.074-58.767C42.307 338.722-7.478 282.729.938 " +
+          "221.217c8.433-61.644 78.896-91.048 126.871-130.712 34.337-28.388 70.198-51.348 112.004-66.78C282.34 8.024 " +
+          "325.382-3.369 370.518.904c54.019 5.115 112.774 10.886 150.881 49.482 39.916 40.427 49.421 100.753 53.385 " +
+          "157.402 4.13 59.015 11.255 128.44-30.444 170.44-41.383 41.683-111.6 19.106-169.213 30.663-46.68 9.364-88.56 " +
+          "35.21-135.943 30.551z"
         }
         fill="currentColor"
       />

@@ -1,4 +1,6 @@
-import { Address } from 'viem';
+import { Address } from "viem";
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 /**
  * Shortens an Ethereum address to a more readable format
@@ -6,13 +8,16 @@ import { Address } from 'viem';
  * @param chars The number of characters to show at the beginning and end
  * @returns The shortened address
  */
-export function shortenAddress(address: string | Address | { toString(): string }, chars = 4): string {
-  if (!address) return '';
-  
-  const addressStr = typeof address === 'string' ? address : address.toString();
-  
+export function shortenAddress(
+  address: string | Address | { toString(): string },
+  chars = 4
+): string {
+  if (!address) return "";
+
+  const addressStr = typeof address === "string" ? address : address.toString();
+
   if (addressStr.length <= chars * 2) return addressStr;
-  
+
   return `${addressStr.substring(0, chars + 2)}...${addressStr.substring(
     addressStr.length - chars
   )}`;
@@ -31,4 +36,8 @@ export function formatNumber(num: number): string {
   } else {
     return num.toString();
   }
+}
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
 }

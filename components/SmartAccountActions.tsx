@@ -1,17 +1,50 @@
 "use client";
 
+/**
+ * SmartAccountActions Component
+ * 
+ * This component provides a UI for interacting with ERC-4337 compliant smart contract accounts 
+ * using Account Kit (https://accountkit.alchemy.com/).
+ * 
+ * Features:
+ * - Send transactions from the smart account
+ * - Sign messages using EIP-191 personal_sign format
+ * - Sign typed data following the EIP-712 standard for structured data
+ * 
+ * Architecture:
+ * - Main component that manages smart account connection state
+ * - Three tab components for different actions (sending transactions, signing messages, and signing typed data)
+ * - Uses Account Kit React hooks for smart account interactions
+ * 
+ * Dependencies:
+ * - @account-kit/react: Provides hooks for smart account interactions
+ * - useWalletStatus: Custom hook that manages wallet connection and smart account status
+ * - UI components from shadcn/ui library (Button, Input, Label, Tabs)
+ * - toast from sonner for notifications
+ * 
+ * Usage Notes:
+ * - User must connect their wallet first to use this component
+ * - Transactions are sent as ERC-4337 UserOperations (account abstraction)
+ * - Message signing uses EIP-191 personal_sign
+ * - Typed data signing follows EIP-712 standard
+ * 
+ * For more information on smart account standards:
+ * - ERC-4337: https://eips.ethereum.org/EIPS/eip-4337
+ * - EIP-191: https://eips.ethereum.org/EIPS/eip-191
+ * - EIP-712: https://eips.ethereum.org/EIPS/eip-712
+ */
+
 import React, { useState, useEffect } from "react";
 import {
   useSendUserOperation,
   useSignMessage,
   useSignTypedData,
-  useSmartAccountClient,
 } from "@account-kit/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import useModularAccount from "@/lib/hooks/useModularAccount";
+import { useWalletStatus } from "@/lib/hooks/accountkit/useWalletStatus";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 /**
@@ -20,19 +53,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 export default function SmartAccountActions() {
   const [address, setAddress] = useState<string | null>(null);
 
-  // Get the smart account client
+  // Get wallet status using our new hook
   const {
     smartAccountClient: client,
-    loading: isLoadingClient,
-    getAddress,
-  } = useModularAccount();
+    isLoadingClient,
+    isConnected,
+    smartAccountAddress
+  } = useWalletStatus();
 
-  // Get the account address
+  // Update address when smart account address changes
   useEffect(() => {
-    if (client) {
-      getAddress().then((addr) => setAddress(addr));
-    }
-  }, [client, getAddress]);
+    setAddress(smartAccountAddress);
+  }, [smartAccountAddress]);
 
   // Loading state
   if (isLoadingClient) {
@@ -40,7 +72,7 @@ export default function SmartAccountActions() {
   }
 
   // Not connected state
-  if (!client || !address) {
+  if (!isConnected || !client || !address) {
     return (
       <div className="p-4 text-center">
         Please connect your wallet to use this feature

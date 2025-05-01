@@ -1,3 +1,28 @@
+/**
+ * @file SendTransaction.tsx
+ * @description Provides a UI component for sending transactions using Account Kit's smart account functionality
+ * 
+ * This component enables users to send transactions with their modular smart account using AccountKit.
+ * It supports ETH transfers as well as custom contract interactions through data parameters.
+ * 
+ * Key features:
+ * - Send ETH to any Ethereum address
+ * - Execute custom contract calls with data parameter
+ * - Uses ERC-4337 User Operations for transaction processing
+ * - Integrated with AccountKit for smart account capabilities
+ * - Full transaction status tracking and error handling
+ * 
+ * Usage:
+ * ```tsx
+ * <SendTransaction />
+ * ```
+ * 
+ * @dev Uses BigInt to handle ETH amounts and convert to wei
+ * @dev Validates recipient address and transaction parameters before submission
+ * @dev Provides real-time user feedback through toast notifications
+ * @dev Requires a connected wallet to function
+ */
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -6,7 +31,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import useModularAccount from "@/lib/hooks/useModularAccount";
+import useModularAccount from "@/lib/hooks/accountkit/useModularAccount";
 
 /**
  * Component for sending transactions using Account Kit smart account
@@ -65,13 +90,17 @@ export default function SendTransaction() {
 
     try {
       // Convert amount to BigInt (in wei)
-      const valueInWei = amount ? BigInt(Math.floor(parseFloat(amount) * 10 ** 18)) : BigInt(0);
+      const valueInWei = amount
+        ? BigInt(Math.floor(parseFloat(amount) * 10 ** 18))
+        : BigInt(0);
 
       // Send the transaction
       sendUserOperation({
         uo: {
           target: recipient as `0x${string}`,
-          data: data.startsWith("0x") ? (data as `0x${string}`) : ("0x" as `0x${string}`),
+          data: data.startsWith("0x")
+            ? (data as `0x${string}`)
+            : ("0x" as `0x${string}`),
           value: valueInWei,
         },
       });

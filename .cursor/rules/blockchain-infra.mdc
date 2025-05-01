@@ -6,7 +6,7 @@ alwaysApply: true
 
 # Blockchain Infra
 
-- Use only Viem.sh.
-- Use only Account-Kit.
-- Never use Wagmi or its SDK.
+- Use Viem.
+- Use Account-Kit.
+- Do not use Wagmi.
 - Ask questions on where you can get more information on a function that you don't truely know if it exits.
