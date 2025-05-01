@@ -64,10 +64,30 @@ const navLinkClass = `
   .replace(/\s+/g, " ")
   .trim();
 
+// Define reusable className for member-only nav links
+const memberNavLinkClass = `
+  group inline-flex h-9 w-max items-center justify-center rounded-md bg-white px-4 py-2 
+  text-sm font-medium transition-colors hover:bg-gray-100 hover:text-gray-900 
+  focus:bg-gray-100 focus:text-gray-900 focus:outline-none disabled:pointer-events-none 
+  disabled:opacity-50 data-[active]:bg-gray-100/50 data-[state=open]:bg-gray-100/50 
+  dark:bg-gray-950 dark:hover:bg-gray-800 dark:hover:text-gray-50 dark:focus:bg-gray-800 
+  dark:focus:text-gray-50 dark:data-[active]:bg-gray-800/50 dark:data-[state=open]:bg-gray-800/50
+  text-[#EC407A]
+`
+  .replace(/\s+/g, " ")
+  .trim();
+
 // Define reusable className for mobile menu links
 const mobileNavLinkClass = `
   flex w-full items-center rounded-md p-2 text-sm font-medium
   hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors
+`;
+
+// Define reusable className for mobile menu member-only links
+const mobileMemberNavLinkClass = `
+  flex w-full items-center rounded-md p-2 text-sm font-medium
+  hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors
+  text-[#EC406A]
 `;
 
 // Update the truncateAddress helper function
@@ -470,16 +490,16 @@ export default function Navbar() {
               </Link>
               {isVerified && hasMembership && (
                 <>
-                  <Link href="/upload" className={navLinkClass}>
+                  <Link href="/upload" className={memberNavLinkClass}>
                     Upload
                   </Link>
-                  <Link href="/live" className={navLinkClass}>
+                  <Link href="/live" className={memberNavLinkClass}>
                     Live
                   </Link>
-                  <Link href="/clips" className={navLinkClass}>
+                  <Link href="/clips" className={memberNavLinkClass}>
                     Clips
                   </Link>
-                  <Link href="/profile" className={navLinkClass}>
+                  <Link href="/profile" className={memberNavLinkClass}>
                     Profile
                   </Link>
                 </>
@@ -717,28 +737,28 @@ export default function Navbar() {
                       </p>
                       <Link
                         href="/upload"
-                        className={mobileNavLinkClass}
+                        className={mobileMemberNavLinkClass}
                         onClick={handleLinkClick}
                       >
                         Upload
                       </Link>
                       <Link
                         href="/live"
-                        className={mobileNavLinkClass}
+                        className={mobileMemberNavLinkClass}
                         onClick={handleLinkClick}
                       >
                         Live
                       </Link>
                       <Link
                         href="/clips"
-                        className={mobileNavLinkClass}
+                        className={mobileMemberNavLinkClass}
                         onClick={handleLinkClick}
                       >
                         Clips
                       </Link>
                       <Link
                         href="/profile"
-                        className={mobileNavLinkClass}
+                        className={mobileMemberNavLinkClass}
                         onClick={handleLinkClick}
                       >
                         Profile
