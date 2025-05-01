@@ -47,7 +47,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { CheckIcon } from "@radix-ui/react-icons";
 import {
   Copy,
   LogOut,
@@ -59,6 +58,7 @@ import {
   Key,
   Loader2,
 } from "lucide-react";
+import { CheckIcon } from "@radix-ui/react-icons";
 import Image from "next/image";
 import {
   Dialog,
@@ -88,11 +88,11 @@ import {
   installValidationActions,
 } from "@account-kit/smart-contracts/experimental";
 import { parseEther } from "viem";
-import { getSmartAccountClient } from "@account-kit/core";
 import { useToast } from "@/components/ui/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { useSessionKeyStorage } from "@/lib/hooks/accountkit/useSessionKeyStorage";
-import { createModularAccountV2Client } from "@account-kit/smart-contracts";
+import { MembershipSection } from "./MembershipSection";
+import { shortenAddress } from "@/lib/utils/utils";
 
 const chainIconMap: Record<number, string> = {
   [base.id]: "/images/chains/base.svg",
@@ -442,7 +442,7 @@ export function AccountDropdown() {
         description: "Please confirm the transaction in your wallet...",
       });
 
-      await sendUserOperation({
+      sendUserOperation({
         uo: {
           target: recipientAddress as `0x${string}`,
           data: "0x",
@@ -653,7 +653,7 @@ export function AccountDropdown() {
                 </select>
 
                 {selectedKeyType.type === "time-limited" && (
-                  <div className="space-y-2">
+                  <div className="space-y-2 mt-4">
                     <label className="text-sm">Time Limit (hours)</label>
                     <input
                       type="number"
@@ -665,7 +665,7 @@ export function AccountDropdown() {
                 )}
 
                 {selectedKeyType.type === "token-limited" && (
-                  <div className="space-y-2">
+                  <div className="space-y-2 mt-4">
                     <label className="text-sm">Spend Limit (ETH)</label>
                     <input
                       type="number"
@@ -677,7 +677,7 @@ export function AccountDropdown() {
                 )}
 
                 {selectedKeyType.type === "allowlist" && (
-                  <div className="space-y-2">
+                  <div className="space-y-2 mt-4">
                     <label className="text-sm">Allowed Address</label>
                     <input
                       type="text"
@@ -691,7 +691,7 @@ export function AccountDropdown() {
               </div>
 
               <Button
-                className="w-full"
+                className="w-full mt-4"
                 onClick={handleCreateSessionKey}
                 disabled={isInstalling}
               >
@@ -705,14 +705,14 @@ export function AccountDropdown() {
                 )}
               </Button>
 
-              <div className="space-y-2">
+              <div className="space-y-2 mt-4">
                 <h3 className="text-sm font-medium">Active Session Keys</h3>
                 {sessionKeys.length === 0 ? (
                   <p className="text-sm text-gray-500">
                     No active session keys
                   </p>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-2 max-h-[200px] overflow-y-auto">
                     {sessionKeys.map((key, index) => (
                       <div
                         key={key.address}
@@ -738,6 +738,7 @@ export function AccountDropdown() {
                           variant="destructive"
                           size="sm"
                           onClick={() => handleRemoveSessionKey(key)}
+                          className="ml-2"
                         >
                           Remove
                         </Button>
@@ -767,12 +768,12 @@ export function AccountDropdown() {
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
-                  className="flex gap-2 items-center transition-all hover:bg-gray-100 dark:hover:bg-gray-800 hover:border-blue-500"
+                  className="flex gap-2 items-center transition-all hover:bg-gray-100 dark:hover:bg-gray-800 hover:border-blue-500 hidden md:flex"
                 >
                   <div className="relative">
                     <Image
                       src={getChainIcon(chain)}
-                      alt={chain.name}
+                      alt={`${chain.name} network icon`}
                       width={32}
                       height={32}
                       className="rounded-full"
@@ -807,7 +808,7 @@ export function AccountDropdown() {
                   >
                     <Image
                       src={getChainIcon(chain)}
-                      alt={chain.name}
+                      alt={`${chain.name} network icon`}
                       width={32}
                       height={32}
                       className="mr-2 rounded-full"
@@ -824,16 +825,17 @@ export function AccountDropdown() {
         </DropdownMenu>
       </TooltipProvider>
 
+      {/* Desktop Dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
             variant="outline"
-            className="flex items-center gap-2 transition-all hover:bg-gray-100 dark:hover:bg-gray-800 hover:border-blue-500"
+            className="hidden md:flex items-center gap-2 transition-all hover:bg-gray-100 dark:hover:bg-gray-800 hover:border-blue-500"
           >
             <Avatar className="h-8 w-8">
               <AvatarImage
                 src={makeBlockie(account?.address || user?.address || "0x")}
-                alt="Wallet Avatar"
+                alt="Wallet avatar"
               />
             </Avatar>
             <span className="max-w-[100px] truncate">
@@ -841,39 +843,21 @@ export function AccountDropdown() {
             </span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent
-          align="end"
-          className="w-56 animate-in fade-in-80 slide-in-from-top-5"
-        >
-          <DropdownMenuLabel className="flex flex-col gap-2">
+        <DropdownMenuContent className="w-[320px] md:w-80" align="end">
+          <DropdownMenuLabel className="font-normal">
             <div
-              className="flex items-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 rounded px-2 py-1 transition-colors"
+              className="flex items-center justify-between cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 rounded px-2 py-1 transition-colors"
               onClick={copyToClipboard}
             >
-              <div className="flex-1">
-                {user?.type === "eoa" ? (
-                  <div className="font-mono text-sm">
-                    {user?.address
-                      ? `${user.address.slice(0, 6)}...${user.address.slice(
-                          -4
-                        )}`
-                      : "..."}
-                  </div>
-                ) : (
-                  <>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                      Smart Account
-                    </div>
-                    <div className="font-mono text-sm">{displayAddress}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                      Controller:{" "}
-                      {user?.address
-                        ? `${user.address.slice(0, 6)}...${user.address.slice(
-                            -4
-                          )}`
-                        : "..."}
-                    </div>
-                  </>
+              <div className="flex flex-col space-y-1">
+                <p className="text-xs text-gray-500">
+                  {user?.type === "eoa" ? "EOA" : "Smart Account"}
+                </p>
+                <p className="font-mono text-sm">{displayAddress}</p>
+                {user?.type !== "eoa" && user?.address && (
+                  <p className="text-xs text-gray-500">
+                    Controller: {shortenAddress(user.address)}
+                  </p>
                 )}
               </div>
               {copySuccess ? (
@@ -883,45 +867,72 @@ export function AccountDropdown() {
               )}
             </div>
           </DropdownMenuLabel>
+
           <DropdownMenuSeparator />
-          <TokenBalance />
+
+          {/* Balances Section */}
+          <div className="px-2 py-2">
+            <p className="text-sm font-medium mb-2">Balances</p>
+            <TokenBalance />
+          </div>
+
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={() => handleActionClick("buy")}
-            className="flex items-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-          >
-            <Wallet className="mr-2 h-4 w-4 text-green-500" /> Buy
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => handleActionClick("send")}
-            className="flex items-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-          >
-            <Send className="mr-2 h-4 w-4 text-blue-500" /> Send
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => handleActionClick("swap")}
-            className="flex items-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-          >
-            <ArrowUpDown className="mr-2 h-4 w-4 text-purple-500" /> Swap
-          </DropdownMenuItem>
+
+          {/* Membership Section */}
+          <div className="px-2 py-2 w-full">
+            <MembershipSection />
+          </div>
+
+          <DropdownMenuSeparator />
+
+          {/* Action Buttons */}
+          <div className="px-2 py-2 space-y-2">
+            <DropdownMenuItem
+              onClick={() => handleActionClick("buy")}
+              className="w-full flex items-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors p-3 md:p-2"
+            >
+              <Wallet className="mr-2 h-4 w-4 text-green-500" /> Buy
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => handleActionClick("send")}
+              className="w-full flex items-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors p-3 md:p-2"
+            >
+              <Send className="mr-2 h-4 w-4 text-blue-500" /> Send
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => handleActionClick("swap")}
+              className="w-full flex items-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors p-3 md:p-2"
+            >
+              <ArrowUpDown className="mr-2 h-4 w-4 text-purple-500" /> Swap
+            </DropdownMenuItem>
+          </div>
+
+          {/* Session Keys Section */}
           {user?.type !== "eoa" && (
             <>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => handleActionClick("session-keys")}
-                className="flex items-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              >
-                <Key className="mr-2 h-4 w-4 text-yellow-500" /> Session Keys
-              </DropdownMenuItem>
+              <div className="px-2 py-2 w-full">
+                <p className="text-xs text-gray-500 mb-2">Advanced Settings</p>
+                <DropdownMenuItem
+                  onClick={() => handleActionClick("session-keys")}
+                  className="w-full flex items-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors p-3 md:p-2"
+                >
+                  <Key className="mr-2 h-4 w-4 text-yellow-500" /> Session Keys
+                </DropdownMenuItem>
+              </div>
             </>
           )}
+
+          {/* Logout */}
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={() => logout()}
-            className="flex items-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-          >
-            <LogOut className="mr-2 h-4 w-4 text-red-500" /> Logout
-          </DropdownMenuItem>
+          <div className="px-2 py-2 w-full">
+            <DropdownMenuItem
+              onClick={() => logout()}
+              className="w-full flex items-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors p-3 md:p-2 text-red-500"
+            >
+              <LogOut className="mr-2 h-4 w-4" /> Logout
+            </DropdownMenuItem>
+          </div>
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -934,7 +945,7 @@ export function AccountDropdown() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px] w-[95%] md:w-auto">
           <DialogHeader>
             <DialogTitle>
               {dialogAction.charAt(0).toUpperCase() + dialogAction.slice(1)}
@@ -949,7 +960,11 @@ export function AccountDropdown() {
             </DialogDescription>
             <DialogClose asChild className="absolute right-4 top-4" />
           </DialogHeader>
-          <div className="grid gap-4 py-4">{getDialogContent()}</div>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-4 max-h-[70vh] overflow-y-auto">
+              {getDialogContent()}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

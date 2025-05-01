@@ -18,7 +18,7 @@ export function LoginWithEthereumButton() {
   const handleLogin = async () => {
     try {
       setIsLoading(true);
-      await openAuthModal();
+      openAuthModal();
     } catch (error) {
       toast.error(
         `Authentication failed: ${

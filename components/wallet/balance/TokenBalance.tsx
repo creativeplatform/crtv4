@@ -1,13 +1,11 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { useChain } from "@account-kit/react";
+import { useEffect, useState } from "react";
+import { useSmartAccountClient, useUser } from "@account-kit/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { formatEther, formatUnits } from "viem";
-import { publicClient } from "@/lib/viem";
-import { useWalletStatus } from "@/lib/hooks/accountkit/useWalletStatus";
+import { formatEther, createPublicClient, http } from "viem";
 import { testTokenContract } from "@/lib/contracts/TestToken";
+import { base, baseSepolia, optimism } from "@account-kit/infra";
 
 interface TokenBalanceData {
   symbol: string;
@@ -44,136 +42,63 @@ function formatBalance(balance: string, symbol: string): string {
 }
 
 export function TokenBalance() {
-  const { isConnected, walletAddress, smartAccountAddress } = useWalletStatus();
-  const { chain } = useChain();
-  const [balances, setBalances] = useState<Record<string, TokenBalanceData>>({
-    ETH: { symbol: "ETH", balance: "0", isLoading: true, error: null },
-    [testTokenContract.symbol]: {
-      symbol: testTokenContract.symbol,
-      balance: "0",
-      isLoading: true,
-      error: null,
-    },
-  });
-  const [lastUpdateTime, setLastUpdateTime] = useState<number>(0);
-
-  const fetchBalances = useCallback(async () => {
-    if (!isConnected || (!walletAddress && !smartAccountAddress) || !chain) {
-      console.log("Missing required data:", {
-        walletAddress,
-        smartAccountAddress,
-        chain,
-      });
-      setBalances((prev) => ({
-        ...prev,
-        ETH: { ...prev.ETH, isLoading: false },
-        [testTokenContract.symbol]: {
-          ...prev[testTokenContract.symbol],
-          isLoading: false,
-        },
-      }));
-      return;
-    }
-
-    try {
-      // Don't show loading state if we're just updating
-      const isInitialLoad = !lastUpdateTime;
-      if (isInitialLoad) {
-        setBalances((prev) => ({
-          ...prev,
-          ETH: { ...prev.ETH, isLoading: true },
-          [testTokenContract.symbol]: {
-            ...prev[testTokenContract.symbol],
-            isLoading: true,
-          },
-        }));
-      }
-
-      // Get addresses to check
-      const addresses = [walletAddress, smartAccountAddress].filter(
-        Boolean
-      ) as `0x${string}`[];
-
-      // Fetch ETH balances
-      let totalEthBalance = BigInt(0);
-      for (const address of addresses) {
-        try {
-          const balance = await publicClient.getBalance({ address });
-          totalEthBalance += balance;
-        } catch (err) {
-          console.error(`Error fetching ETH balance for ${address}:`, err);
-        }
-      }
-
-      // Fetch TT token balances
-      let totalTokenBalance = BigInt(0);
-      for (const address of addresses) {
-        try {
-          const balance = await publicClient.readContract({
-            ...testTokenContract,
-            functionName: "balanceOf",
-            args: [address],
-          });
-          totalTokenBalance += balance as bigint;
-        } catch (err) {
-          console.error(
-            `Error fetching ${testTokenContract.symbol} balance for ${address}:`,
-            err
-          );
-        }
-      }
-
-      setBalances((prev) => ({
-        ETH: {
-          ...prev.ETH,
-          balance: formatEther(totalEthBalance),
-          isLoading: false,
-          error: null,
-        },
-        [testTokenContract.symbol]: {
-          ...prev[testTokenContract.symbol],
-          balance: formatUnits(totalTokenBalance, testTokenContract.decimals),
-          isLoading: false,
-          error: null,
-        },
-      }));
-      setLastUpdateTime(Date.now());
-    } catch (error) {
-      console.error("Error fetching balances:", error);
-      setBalances((prev) => ({
-        ETH: {
-          ...prev.ETH,
-          error: "Failed to fetch balance",
-          isLoading: false,
-        },
-        [testTokenContract.symbol]: {
-          ...prev[testTokenContract.symbol],
-          error: "Failed to fetch balance",
-          isLoading: false,
-        },
-      }));
-    }
-  }, [walletAddress, smartAccountAddress, chain, isConnected, lastUpdateTime]);
+  const { client } = useSmartAccountClient({});
+  const user = useUser();
+  const [ethBalance, setEthBalance] = useState<bigint | null>(null);
+  const [ttBalance, setTtBalance] = useState<bigint | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetchBalances();
+    async function getBalances() {
+      setIsLoading(true);
+      try {
+        const address = client?.account?.address || user?.address;
+        if (!address) {
+          setEthBalance(null);
+          setTtBalance(null);
+          return;
+        }
 
-    // Only set up polling if we're connected
-    if (isConnected) {
-      const interval = setInterval(fetchBalances, 5000);
-      return () => clearInterval(interval);
+        // Create a public client for the current chain
+        const publicClient = createPublicClient({
+          chain: baseSepolia, // You can make this dynamic based on the current chain
+          transport: http(),
+        });
+
+        // Get ETH balance
+        const ethBalance = await publicClient.getBalance({
+          address: address as `0x${string}`,
+        });
+        setEthBalance(ethBalance);
+
+        // Get TT balance
+        const ttBalance = (await publicClient.readContract({
+          address: testTokenContract.address,
+          abi: testTokenContract.abi,
+          functionName: "balanceOf",
+          args: [address as `0x${string}`],
+        })) as bigint;
+        setTtBalance(ttBalance);
+      } catch (error) {
+        console.error("Error fetching balances:", error);
+        setEthBalance(null);
+        setTtBalance(null);
+      } finally {
+        setIsLoading(false);
+      }
     }
-  }, [fetchBalances, isConnected]);
+    getBalances();
+  }, [client, user]);
 
-  if (!isConnected) {
+  if (isLoading) {
     return (
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-medium">Balances</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="text-sm text-muted-foreground">
-            Connect wallet to view balances
+        <CardContent className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-sm">Loading balances...</span>
           </div>
         </CardContent>
       </Card>
@@ -186,22 +111,20 @@ export function TokenBalance() {
         <CardTitle className="text-sm font-medium">Balances</CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
-        {Object.entries(balances).map(([symbol, data]) => (
-          <div key={symbol} className="flex items-center justify-between">
-            <span className="text-sm font-medium">{symbol}</span>
-            <div>
-              {data.isLoading && !data.balance ? (
-                <Skeleton className="h-6 w-24" />
-              ) : data.error && !data.balance ? (
-                <div className="text-sm text-red-500">{data.error}</div>
-              ) : (
-                <div className="text-sm font-bold">
-                  {formatBalance(data.balance, data.symbol)}
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
+        <div className="flex items-center justify-between">
+          <span className="text-sm">ETH</span>
+          <span className="text-sm font-medium">
+            {ethBalance
+              ? formatBalance(formatEther(ethBalance), "ETH")
+              : "0 ETH"}
+          </span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-sm">TT</span>
+          <span className="text-sm font-medium">
+            {ttBalance ? formatBalance(formatEther(ttBalance), "TT") : "0 TT"}
+          </span>
+        </div>
       </CardContent>
     </Card>
   );

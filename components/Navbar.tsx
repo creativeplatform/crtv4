@@ -47,6 +47,8 @@ import WertButton from "./wallet/buy/fund-button";
 import { TokenBalance } from "./wallet/balance/TokenBalance";
 import type { Chain as ViemChain } from "viem/chains";
 import { AccountDropdown } from "@/components/account-dropdown/AccountDropdown";
+import { useMembershipVerification } from "@/hooks/useMembershipVerification";
+import { MembershipSection } from "./account-dropdown/MembershipSection";
 
 type UseUserResult = (AccountUser & { type: "eoa" | "sca" }) | null;
 
@@ -157,6 +159,7 @@ export default function Navbar() {
   const { client: smartAccountClient } = useSmartAccountClient({});
   const [isNetworkConnected, setIsNetworkConnected] = useState(true);
   const [isSessionSigsModalOpen, setIsSessionSigsModalOpen] = useState(false);
+  const { isVerified, hasMembership } = useMembershipVerification();
 
   // Initialize Viem public client for ENS resolution
   const publicClient = createPublicClient({
@@ -409,7 +412,7 @@ export default function Navbar() {
         chainName,
       });
 
-      await setChain({ chain: newChain });
+      setChain({ chain: newChain });
       toast.success(`Switched to ${chainName}`);
       setCurrentChainName(chainName);
     } catch (error) {
@@ -465,6 +468,22 @@ export default function Navbar() {
               <Link href="/vote" prefetch={false} className={navLinkClass}>
                 Vote
               </Link>
+              {isVerified && hasMembership && (
+                <>
+                  <Link href="/upload" className={navLinkClass}>
+                    Upload
+                  </Link>
+                  <Link href="/live" className={navLinkClass}>
+                    Live
+                  </Link>
+                  <Link href="/clips" className={navLinkClass}>
+                    Clips
+                  </Link>
+                  <Link href="/profile" className={navLinkClass}>
+                    Profile
+                  </Link>
+                </>
+              )}
             </nav>
           </div>
 
@@ -549,6 +568,11 @@ export default function Navbar() {
                     {/* Add TokenBalance here */}
                     <div className="mt-4">
                       <TokenBalance />
+                    </div>
+
+                    {/* Add Membership Section here */}
+                    <div className="mt-4">
+                      <MembershipSection />
                     </div>
 
                     {/* Add Chain Selector here */}
@@ -685,6 +709,42 @@ export default function Navbar() {
                   >
                     Vote
                   </Link>
+                  {isVerified && hasMembership && (
+                    <>
+                      <div className="h-px bg-gray-200 dark:bg-gray-700 my-2" />
+                      <p className="text-xs text-muted-foreground px-2">
+                        Member Access
+                      </p>
+                      <Link
+                        href="/upload"
+                        className={mobileNavLinkClass}
+                        onClick={handleLinkClick}
+                      >
+                        Upload
+                      </Link>
+                      <Link
+                        href="/live"
+                        className={mobileNavLinkClass}
+                        onClick={handleLinkClick}
+                      >
+                        Live
+                      </Link>
+                      <Link
+                        href="/clips"
+                        className={mobileNavLinkClass}
+                        onClick={handleLinkClick}
+                      >
+                        Clips
+                      </Link>
+                      <Link
+                        href="/profile"
+                        className={mobileNavLinkClass}
+                        onClick={handleLinkClick}
+                      >
+                        Profile
+                      </Link>
+                    </>
+                  )}
                 </nav>
               </div>
             </div>
