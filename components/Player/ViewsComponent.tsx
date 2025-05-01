@@ -23,7 +23,7 @@ export const ViewsComponent: React.FC<ViewsComponentProps> = ({ playbackId }) =>
   useEffect(() => {
     async function fetchViewMetrics() {
       if (!playbackId) {
-        setError('No playback ID provided');
+        setError('No playback ID provided. Please check your input and try again.');
         setLoading(false);
         return;
       }
@@ -34,10 +34,10 @@ export const ViewsComponent: React.FC<ViewsComponentProps> = ({ playbackId }) =>
         if (result) {
           setViewMetrics(result);
         } else {
-          setError('Failed to fetch view metrics');
+          setError('Failed to fetch view metrics. Please try again later or contact support for assistance.');
         }
       } catch (err) {
-        setError((err as Error).message || 'Failed to fetch view metrics');
+        setError((err as Error).message || 'Failed to fetch view metrics. Please try again later or contact support for assistance.');
         console.error('Error fetching view metrics:', err);
       } finally {
         setLoading(false);

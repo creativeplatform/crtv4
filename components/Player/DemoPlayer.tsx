@@ -4,6 +4,7 @@ import { Src } from '@livepeer/react';
 import { PlayIcon, PauseIcon, MuteIcon, UnmuteIcon } from '@livepeer/react/assets';
 import { useEffect, useState, useRef } from 'react';
 import { useVideo } from '../../context/VideoContext';
+import './Player.css';
 export const DemoPlayer: React.FC<{ src: Src[] | null; title: string }> = ({
   src,
   title,
