@@ -1,8 +1,8 @@
 'use server';
 
 import crypto from 'crypto';
-import { WebhookContext } from '../app/api/livepeer/token-gate/route';
-
+import {  } from '../app/api/livepeer/token-gate/route';
+import { WebhookContext } from '././../app/api/livepeer/token-gate/lib/access-control-resolver';
 // Secret key for HMAC - in production, use a strong environment variable
 const SECRET_KEY = process.env.ACCESS_KEY_SECRET || 'livepeer-access-key-secret';
 

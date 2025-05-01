@@ -25,7 +25,7 @@ import {
   useUser,
   useChain,
 } from "@account-kit/react";
-import { base, baseSepolia, optimism, polygon } from "viem/chains";
+import { base, baseSepolia, optimism, polygon, mainnet } from "viem/chains";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import ThemeToggleComponent from "./ThemeToggle/toggleComponent";
 import {
@@ -49,9 +49,6 @@ import {
 import type { User as AccountUser } from "@account-kit/signer";
 import useModularAccount from "@/lib/hooks/useModularAccount";
 import { createPublicClient, http } from "viem";
-import { mainnet } from "viem/chains";
-import { LitProtocolStatus } from "./LitProtocolStatus";
-
 type UseUserResult = (AccountUser & { type: "eoa" | "sca" }) | null;
 
 // Define reusable className for nav links
@@ -157,13 +154,13 @@ export default function Navbar() {
       try {
         // Try to get ENS name first
         const ensName = await publicClient.getEnsName({
-          address: user.address as `0x${string}`,
+          address: user.address,
           universalResolverAddress:
             "0x74E20Bd2A1fE0cdbe45b9A1d89cb7e0a45b36376",
         });
 
         // Copy ENS name if available, otherwise copy address
-        const textToCopy = ensName || user.address;
+        const textToCopy = ensName ?? user.address;
         await navigator.clipboard.writeText(textToCopy);
 
         setCopySuccess(true);
@@ -469,7 +466,6 @@ export default function Navbar() {
                         )}
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
-                      <LitProtocolStatus />
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onClick={() => handleActionClick("buy")}

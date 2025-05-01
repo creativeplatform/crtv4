@@ -2,7 +2,9 @@
 
 import { Type, InputCreatorIdType } from "livepeer/models/components";
 import { fullLivepeer } from "../../../lib/sdk/livepeer/fullClient";
-import { WebhookContext } from "../livepeer/token-gate/route";
+// import { WebhookContext } from "../livepeer/token-gate/route";
+// TODO: Replace the following import path with the correct one where WebhookContext is exported
+import type { WebhookContext } from "../livepeer/token-gate/lib/access-control-resolver";
 
 export const getLivepeerUploadUrl = async (
   fileName: string,
