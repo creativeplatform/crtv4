@@ -36,9 +36,7 @@ export async function createModularAccountClient({
     transport: alchemy({
       apiKey,
     }),
-    signer: LocalAccountSigner.privateKeyToAccountSigner(
-      privateKey as `0x${string}`
-    ),
+    signer: LocalAccountSigner.privateKeyToAccountSigner(generatePrivateKey()),
   });
 
   return accountClient;

@@ -8,8 +8,8 @@ import { Button } from "../ui/button";
 import { FaSpinner, FaTrophy } from "react-icons/fa";
 import Link from "next/link";
 import { useUser } from "@account-kit/react";
-import { Address, createPublicClient, http, getAddress } from "viem";
-import { mainnet } from "viem/chains";
+import { Address, createPublicClient, getAddress } from "viem";
+import { alchemy, mainnet } from "@account-kit/infra";
 
 interface LeaderboardItem {
   uniqueId: number;
@@ -43,9 +43,9 @@ export const AddressDisplay = ({ address }: { address: Address }) => {
       try {
         const publicClient = createPublicClient({
           chain: mainnet,
-          transport: http(
-            `https://eth-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`
-          ),
+          transport: alchemy({
+            apiKey: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY as string,
+          }),
         });
 
         const ensName = await publicClient.getEnsName({

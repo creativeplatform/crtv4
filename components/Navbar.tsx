@@ -36,17 +36,16 @@ import type { User as AccountUser } from "@account-kit/signer";
 import useModularAccount from "@/lib/hooks/accountkit/useModularAccount";
 import { createPublicClient, http } from "viem";
 import {
+  alchemy,
   mainnet,
   base,
   baseSepolia,
   optimism,
-  polygon,
 } from "@account-kit/infra";
 import { ArrowBigDown, ArrowBigUp } from "lucide-react";
-import WertButton from "./wallet/buy/buy-button";
+import WertButton from "./wallet/buy/fund-button";
 import { TokenBalance } from "./wallet/balance/TokenBalance";
 import type { Chain as ViemChain } from "viem/chains";
-import SessionSigManager from "@/components/lit/GetSessionSigsButton";
 import { AccountDropdown } from "@/components/account-dropdown/AccountDropdown";
 
 type UseUserResult = (AccountUser & { type: "eoa" | "sca" }) | null;
@@ -96,8 +95,6 @@ const getChainGradient = (chain: ViemChain) => {
       return "from-[#0052FF] to-[#0052FF]";
     case optimism.id:
       return "from-[#FF0420] to-[#FF0420]";
-    case polygon.id:
-      return "from-[#8247E5] to-[#8247E5]";
     default:
       return "from-gray-400 to-gray-600";
   }
@@ -111,8 +108,6 @@ const getChainName = (chain: ViemChain) => {
       return "Base Sepolia";
     case optimism.id:
       return "Optimism";
-    case polygon.id:
-      return "Polygon";
     default:
       return chain.name;
   }
@@ -127,8 +122,6 @@ const getChainLogo = (chain: ViemChain) => {
       return "/images/chains/base-sepolia.svg";
     case optimism.id:
       return "/images/chains/optimism.svg";
-    case polygon.id:
-      return "/images/chains/polygon.svg";
     default:
       return "/images/chains/default-chain.svg";
   }
@@ -168,9 +161,9 @@ export default function Navbar() {
   // Initialize Viem public client for ENS resolution
   const publicClient = createPublicClient({
     chain: mainnet,
-    transport: http(
-      `https://eth-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`
-    ),
+    transport: alchemy({
+      apiKey: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY as string,
+    }),
   });
 
   // Update display address when user changes
@@ -275,7 +268,6 @@ export default function Navbar() {
   const chainNames: Record<number, string> = {
     8453: "Base",
     10: "Optimism",
-    137: "Polygon",
     84532: "Base Sepolia",
   };
 
@@ -283,7 +275,6 @@ export default function Navbar() {
   const chainIcons: Record<number, string> = {
     8453: "/images/base.svg", // Replace with actual path to Base icon
     10: "/images/optimism.svg", // Replace with actual path to Optimism icon
-    137: "/images/polygon.svg", // Replace with actual path to Polygon icon
     84532: "/images/base-sepolia.svg", // Replace with actual path to Base Sepolia icon
   };
 
@@ -564,7 +555,7 @@ export default function Navbar() {
                     <div className="mt-4">
                       <p className="text-sm font-medium mb-2">Network</p>
                       <div className="grid grid-cols-2 gap-2">
-                        {[base, optimism, baseSepolia, polygon].map((chain) => (
+                        {[base, optimism, baseSepolia].map((chain) => (
                           <Button
                             key={chain.id}
                             variant="outline"
@@ -702,24 +693,6 @@ export default function Navbar() {
           {/* Account Kit Dialog for actions */}
           <Dialog isOpen={isDialogOpen} onClose={() => setIsDialogOpen(false)}>
             <div className="max-w-md mx-auto">{getDialogContent()}</div>
-          </Dialog>
-
-          {/* Session Signatures Modal */}
-          <Dialog
-            isOpen={isSessionSigsModalOpen}
-            onClose={() => setIsSessionSigsModalOpen(false)}
-          >
-            <div className="max-w-lg mx-auto p-2">
-              <SessionSigManager />
-              <div className="flex justify-end mt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsSessionSigsModalOpen(false)}
-                >
-                  Close
-                </Button>
-              </div>
-            </div>
           </Dialog>
         </div>
       </div>

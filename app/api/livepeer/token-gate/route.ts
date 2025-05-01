@@ -3,14 +3,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   createPublicClient,
-  http,
   Address,
   getContract,
   PublicClient,
   parseAbiItem,
 } from "viem";
-import { base, baseSepolia, optimism, polygon, Chain } from "viem/chains";
-
+import { alchemy, baseSepolia, base, optimism } from "@account-kit/infra";
+import type { Chain } from "viem";
 import { generateAccessKey, validateAccessKey } from "../access-key";
 import { getSmartAccountClient } from "@account-kit/core";
 import { config } from "@/config";
@@ -33,7 +32,6 @@ const erc1155ABI = [
 const chainMapping: Record<number, Chain> = {
   8453: base,
   10: optimism,
-  137: polygon,
   84532: baseSepolia,
 };
 
@@ -246,7 +244,9 @@ async function checkUserTokenBalances(
     // Get a public client for the chain
     const publicClient = createPublicClient({
       chain,
-      transport: http(),
+      transport: alchemy({
+        apiKey: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY as string,
+      }),
     });
 
     // Check the user token balance

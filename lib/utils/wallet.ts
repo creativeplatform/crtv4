@@ -1,10 +1,11 @@
-import type { SignerLike } from "@lit-protocol/types";
-import { createPublicClient, http, getAddress } from "viem";
-import { baseSepolia } from "viem/chains";
+import { createPublicClient, getAddress } from "viem";
+import { alchemy, baseSepolia } from "@account-kit/infra";
 
 const publicClient = createPublicClient({
   chain: baseSepolia,
-  transport: http(),
+  transport: alchemy({
+    apiKey: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY as string,
+  }),
 });
 
 /**

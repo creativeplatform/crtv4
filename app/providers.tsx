@@ -8,7 +8,6 @@ import { ThemeProvider } from "next-themes";
 import { Toaster } from "sonner";
 import { VideoProvider } from "../context/VideoContext";
 import { ErrorBoundary } from "next/dist/client/components/error-boundary";
-import { LitProvider } from "@/context/LitContext";
 
 function ErrorFallback({ error }: { error: Error }) {
   return (
@@ -40,12 +39,10 @@ export const Providers = (
               queryClient={queryClient}
               initialState={props.initialState}
             >
-              <LitProvider>
-                <VideoProvider>
-                  {props.children}
-                  <Toaster position="top-right" richColors />
-                </VideoProvider>
-              </LitProvider>
+              <VideoProvider>
+                {props.children}
+                <Toaster position="top-right" richColors />
+              </VideoProvider>
             </AlchemyAccountProvider>
           </ThemeProvider>
         </QueryClientProvider>
