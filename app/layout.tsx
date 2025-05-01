@@ -7,6 +7,7 @@ import "./globals.css";
 import { Providers } from "./providers";
 import Navbar from "@/components/Navbar";
 import { cn } from "@/lib/utils/utils";
+import { Toaster } from "@/components/ui/toaster";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -15,15 +16,16 @@ export const metadata: Metadata = {
   description: "The Way Content Should Be.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   // Persist state across pages
+  const headersList = headers();
   const initialState = cookieToInitialState(
     config,
-    headers().get("cookie") ?? undefined
+    headersList.get("cookie") ?? undefined
   );
 
   return (
@@ -38,6 +40,7 @@ export default function RootLayout({
           <Navbar />
           {children}
         </Providers>
+        <Toaster />
       </body>
     </html>
   );

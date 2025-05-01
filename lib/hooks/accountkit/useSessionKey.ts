@@ -5,14 +5,18 @@ import { LocalAccountSigner } from "@aa-sdk/core";
 import { createModularAccountV2Client } from "@account-kit/smart-contracts";
 import { type SmartAccountSigner } from "@aa-sdk/core";
 import { alchemy } from "@account-kit/infra";
+import { useSessionKeyStorage } from "./useSessionKeyStorage";
+
+export interface SessionKeyPermissions {
+  isGlobal?: boolean;
+  allowedFunctions?: string[];
+  timeLimit?: number; // in seconds
+  spendingLimit?: bigint;
+  allowedAddresses?: string[];
+}
 
 interface UseSessionKeyOptions {
-  permissions?: {
-    isGlobal?: boolean;
-    allowedFunctions?: string[];
-    timeLimit?: number; // in seconds
-    spendingLimit?: bigint;
-  };
+  permissions?: SessionKeyPermissions;
 }
 
 export function useSessionKey(options: UseSessionKeyOptions = {}) {
@@ -24,6 +28,7 @@ export function useSessionKey(options: UseSessionKeyOptions = {}) {
     },
   });
   const [isInstalling, setIsInstalling] = useState(false);
+  const { sessionKeys } = useSessionKeyStorage();
 
   const createSessionKey = useCallback(async () => {
     if (!smartAccountClient?.account || !chain) {
@@ -45,6 +50,9 @@ export function useSessionKey(options: UseSessionKeyOptions = {}) {
         throw new Error("Alchemy API key not found");
       }
 
+      // Calculate next entityId based on existing session keys
+      const nextEntityId = sessionKeys.length + 1;
+
       // Create session key client
       const sessionKeyClient = await createModularAccountV2Client({
         chain,
@@ -52,23 +60,68 @@ export function useSessionKey(options: UseSessionKeyOptions = {}) {
         signer: sessionKeySigner,
         accountAddress: smartAccountClient.getAddress(),
         signerEntity: {
-          entityId: 1, // Start from 1, as 0 is for owner
-          isGlobalValidation: options.permissions?.isGlobal ?? true,
+          entityId: nextEntityId,
+          isGlobalValidation: options.permissions?.isGlobal ?? false,
         },
       });
+
+      // Verify session key client
+      const sessionKeyAddress = await sessionKeySigner.getAddress();
+      if (!sessionKeyAddress) {
+        throw new Error("Failed to get session key address");
+      }
 
       return {
         sessionKeyPrivate,
         sessionKeyClient,
-        sessionKeyAddress: await sessionKeySigner.getAddress(),
+        sessionKeyAddress,
+        entityId: nextEntityId,
       };
+    } catch (error) {
+      console.error("Error creating session key:", error);
+      throw error;
     } finally {
       setIsInstalling(false);
     }
-  }, [smartAccountClient, chain, options.permissions?.isGlobal]);
+  }, [
+    smartAccountClient,
+    chain,
+    options.permissions?.isGlobal,
+    sessionKeys.length,
+  ]);
+
+  const useSessionKeyClient = useCallback(
+    async (sessionKeyPrivate: string, entityId: number) => {
+      if (!smartAccountClient?.account || !chain) {
+        throw new Error("Smart account not initialized or chain not selected");
+      }
+
+      const apiKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY;
+      if (!apiKey) {
+        throw new Error("Alchemy API key not found");
+      }
+
+      const sessionKeySigner = LocalAccountSigner.privateKeyToAccountSigner(
+        sessionKeyPrivate as `0x${string}`
+      );
+
+      return createModularAccountV2Client({
+        chain,
+        transport: alchemy({ apiKey }),
+        signer: sessionKeySigner,
+        accountAddress: smartAccountClient.getAddress(),
+        signerEntity: {
+          entityId,
+          isGlobalValidation: options.permissions?.isGlobal ?? false,
+        },
+      });
+    },
+    [smartAccountClient, chain, options.permissions?.isGlobal]
+  );
 
   return {
     createSessionKey,
+    useSessionKeyClient,
     isInstalling,
   };
 }
