@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatEther, createPublicClient, http } from "viem";
 import { testTokenContract } from "@/lib/contracts/TestToken";
 import { base, baseSepolia, optimism } from "@account-kit/infra";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface TokenBalanceData {
   symbol: string;
@@ -98,7 +99,12 @@ export function TokenBalance() {
         </CardHeader>
         <CardContent className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm">Loading balances...</span>
+            <span className="text-sm">ETH</span>
+            <Skeleton className="h-5 w-16" />
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm">TT</span>
+            <Skeleton className="h-5 w-16" />
           </div>
         </CardContent>
       </Card>

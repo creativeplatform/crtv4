@@ -476,9 +476,6 @@ export default function Navbar() {
             </Link>
 
             <nav className="hidden md:flex items-center ml-8 space-x-1">
-              <Link href="/" className={navLinkClass}>
-                Home
-              </Link>
               <Link href="/discover" className={navLinkClass}>
                 Discover
               </Link>
@@ -488,22 +485,6 @@ export default function Navbar() {
               <Link href="/vote" prefetch={false} className={navLinkClass}>
                 Vote
               </Link>
-              {isVerified && hasMembership && (
-                <>
-                  <Link href="/upload" className={memberNavLinkClass}>
-                    Upload
-                  </Link>
-                  <Link href="/live" className={memberNavLinkClass}>
-                    Live
-                  </Link>
-                  <Link href="/clips" className={memberNavLinkClass}>
-                    Clips
-                  </Link>
-                  <Link href="/profile" className={memberNavLinkClass}>
-                    Profile
-                  </Link>
-                </>
-              )}
             </nav>
           </div>
 
@@ -702,13 +683,6 @@ export default function Navbar() {
                 {/* Navigation Links */}
                 <nav className="grid grid-flow-row gap-2 auto-rows-max text-sm">
                   <Link
-                    href="/"
-                    className={mobileNavLinkClass}
-                    onClick={handleLinkClick}
-                  >
-                    Home
-                  </Link>
-                  <Link
                     href="/discover"
                     className={mobileNavLinkClass}
                     onClick={handleLinkClick}
@@ -729,42 +703,6 @@ export default function Navbar() {
                   >
                     Vote
                   </Link>
-                  {isVerified && hasMembership && (
-                    <>
-                      <div className="h-px bg-gray-200 dark:bg-gray-700 my-2" />
-                      <p className="text-xs text-muted-foreground px-2">
-                        Member Access
-                      </p>
-                      <Link
-                        href="/upload"
-                        className={mobileMemberNavLinkClass}
-                        onClick={handleLinkClick}
-                      >
-                        Upload
-                      </Link>
-                      <Link
-                        href="/live"
-                        className={mobileMemberNavLinkClass}
-                        onClick={handleLinkClick}
-                      >
-                        Live
-                      </Link>
-                      <Link
-                        href="/clips"
-                        className={mobileMemberNavLinkClass}
-                        onClick={handleLinkClick}
-                      >
-                        Clips
-                      </Link>
-                      <Link
-                        href="/profile"
-                        className={mobileMemberNavLinkClass}
-                        onClick={handleLinkClick}
-                      >
-                        Profile
-                      </Link>
-                    </>
-                  )}
                 </nav>
               </div>
             </div>

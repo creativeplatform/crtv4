@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { Profile, Type } from "livepeer/models/components";
 import * as Popover from "@radix-ui/react-popover";
 import { CheckIcon, ChevronDownIcon, XIcon } from "lucide-react";
+import { useEffect, useRef } from "react";
 
 interface BroadcastProps {
   streamKey: string | null;
@@ -32,6 +33,7 @@ function BroadcastWithControls({ streamKey }: BroadcastProps) {
   const [isCreatingStream, setIsCreatingStream] = React.useState(false);
   const [streamData, setStreamData] = React.useState<any>(null);
   const settingsButtonRef = React.useRef<HTMLButtonElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   React.useEffect(() => {
     const createStream = async () => {
@@ -73,6 +75,28 @@ function BroadcastWithControls({ streamKey }: BroadcastProps) {
 
     createStream();
   }, [streamKey, isCreatingStream]);
+
+  useEffect(() => {
+    async function startCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+        });
+        streamRef.current = stream;
+        // Attach stream to video element, etc.
+      } catch (error) {
+        // Handle error
+      }
+    }
+
+    startCamera();
+
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+      }
+    };
+  }, []);
 
   const ingestUrl = streamData?.ingest?.rtmp?.url || getIngest(streamKey);
 

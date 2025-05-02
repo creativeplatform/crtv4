@@ -387,6 +387,31 @@ const FileUpload: React.FC<FileUploadProps> = ({
           </div>
         </div>
 
+        {/* Process Subtitles Button & Status */}
+        {uploadComplete && (
+          <div className="mt-4 flex flex-col items-center gap-2">
+            <Button
+              onClick={handleAudioToText}
+              disabled={uploadState === "loading" || subtitleProcessingComplete}
+              className="w-full max-w-xs"
+            >
+              {subtitleProcessingComplete
+                ? "Subtitles Processed"
+                : "Process Subtitles"}
+            </Button>
+            {subtitleProcessingComplete && (
+              <span className="text-green-600 text-sm">
+                Subtitles processed and uploaded.
+              </span>
+            )}
+            {!subtitleProcessingComplete && (
+              <span className="text-gray-500 text-xs">
+                You can process subtitles now or later.
+              </span>
+            )}
+          </div>
+        )}
+
         {/* Navigation Buttons */}
         <div className="mt-6 flex items-center justify-center gap-3">
           {onPressBack && (
@@ -401,9 +426,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
           )}
           {onPressNext && (
             <Button
-              disabled={
-                uploadState !== "complete" || !subtitleProcessingComplete
-              }
+              disabled={uploadState !== "complete"}
               onClick={() => {
                 if (livepeerAsset) {
                   onPressNext(livepeerAsset);
@@ -418,18 +441,6 @@ const FileUpload: React.FC<FileUploadProps> = ({
             </Button>
           )}
         </div>
-
-        {uploadComplete && !subtitleProcessingComplete && (
-          <div className="mt-4">
-            <Button
-              onClick={handleAudioToText}
-              disabled={uploadState === "loading"}
-              className="w-full"
-            >
-              Process Subtitles
-            </Button>
-          </div>
-        )}
       </div>
     </div>
   );

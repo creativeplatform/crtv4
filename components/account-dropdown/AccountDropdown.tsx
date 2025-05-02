@@ -4,22 +4,22 @@
  * AccountDropdown Component
  *
  * This component serves as the primary user account interface for the application,
- * handling wallet connections, network switching, and Lit Protocol integrations.
+ * handling wallet connections, network switching integrations.
  *
  * KEY ARCHITECTURE NOTES:
  * 1. INTEGRATION POINTS:
  *    - Account Kit: For wallet connection and chain management
- *    - Lit Protocol: For programmable key pairs (PKPs) and session signatures
+ *
  *
  * 2. STATE MANAGEMENT:
- *    - EOA Signer: Required for Lit Protocol authentication (ECDSA signatures)
- *    - Unified Session Signer: Manages session authentication with Lit Protocol
+ *    - EOA Signer: Required for Account Kit authentication (ECDSA signatures)
+ *    - Unified Session Signer: Manages session authentication with Account Kit
  *    - Chain state: Handles network switching between supported chains
  *
  * 3. IMPORTANT WORKFLOWS:
- *    - Authentication: EOA signer must be initialized before Lit Protocol auth
- *    - Session Signatures: Required for Lit Protocol operations
- *    - Chain Switching: Changes the network for both Account Kit and Lit integrations
+ *    - Authentication: EOA signer must be initialized before Account Kit auth
+ *    - Session Signatures: By Account Kit
+ *    - Chain Switching: Changes the network for Account Kit integration
  */
 
 import { useState, useEffect } from "react";
@@ -57,6 +57,10 @@ import {
   ArrowBigUp,
   Key,
   Loader2,
+  CloudUpload,
+  RadioTower,
+  Bot,
+  ShieldUser,
 } from "lucide-react";
 import { CheckIcon } from "@radix-ui/react-icons";
 import Image from "next/image";
@@ -93,6 +97,9 @@ import { ToastAction } from "@/components/ui/toast";
 import { useSessionKeyStorage } from "@/lib/hooks/accountkit/useSessionKeyStorage";
 import { MembershipSection } from "./MembershipSection";
 import { shortenAddress } from "@/lib/utils/utils";
+import Link from "next/link";
+import { useMembershipVerification } from "@/lib/hooks/unlock/useMembershipVerification";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const chainIconMap: Record<number, string> = {
   [base.id]: "/images/chains/base.svg",
@@ -211,6 +218,7 @@ export function AccountDropdown() {
   const [sendAmount, setSendAmount] = useState<string>("");
   const [isSending, setIsSending] = useState(false);
   const { toast } = useToast();
+  const [isLinksLoading, setIsLinksLoading] = useState(false);
 
   const { createSessionKey, isInstalling } = useSessionKey({
     permissions: {
@@ -258,6 +266,8 @@ export function AccountDropdown() {
       });
     },
   });
+
+  const { isVerified, hasMembership } = useMembershipVerification();
 
   useEffect(() => {
     console.log({
@@ -768,7 +778,7 @@ export function AccountDropdown() {
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
-                  className="flex gap-2 items-center transition-all hover:bg-gray-100 dark:hover:bg-gray-800 hover:border-blue-500 hidden md:flex"
+                  className="gap-2 items-center transition-all hover:bg-gray-100 dark:hover:bg-gray-800 hover:border-blue-500 hidden md:flex"
                 >
                   <div className="relative">
                     <Image
@@ -911,6 +921,64 @@ export function AccountDropdown() {
               <ArrowUpDown className="mr-2 h-4 w-4 text-purple-500" /> Swap
             </DropdownMenuItem>
           </div>
+
+          {/* Member Access Links */}
+          {isVerified && hasMembership && (
+            <>
+              <DropdownMenuSeparator />
+              <div className="px-2 py-2 w-full">
+                <p className="text-xs text-muted-foreground mb-2">
+                  Member Access
+                </p>
+                {isLinksLoading ? (
+                  <div className="space-y-2">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                ) : (
+                  <>
+                    <Link href="/upload" passHref legacyBehavior>
+                      <DropdownMenuItem
+                        className="w-full flex items-center cursor-pointer hover:bg-gray-100 
+                      dark:hover:bg-gray-800 transition-colors p-3 md:p-2"
+                      >
+                        <CloudUpload className="mr-2 h-4 w-4" /> Upload
+                      </DropdownMenuItem>
+                    </Link>
+                    <Link href="/live" passHref legacyBehavior>
+                      <DropdownMenuItem
+                        className="w-full flex items-center cursor-pointer hover:bg-gray-100 
+                      dark:hover:bg-gray-800 transition-colors p-3 md:p-2"
+                      >
+                        <RadioTower className="mr-2 h-4 w-4" /> Live
+                      </DropdownMenuItem>
+                    </Link>
+                    <Link href="/clips" passHref legacyBehavior>
+                      <DropdownMenuItem
+                        className="w-full flex items-center cursor-pointer hover:bg-gray-100 
+                      dark:hover:bg-gray-800 transition-colors p-3 md:p-2"
+                      >
+                        <Bot className="mr-2 h-4 w-4" /> Daydream
+                        <span className="ml-2 px-2 py-0.5 rounded bg-muted-foreground/10 text-xs text-muted-foreground">
+                          Beta
+                        </span>
+                      </DropdownMenuItem>
+                    </Link>
+                    <Link href="/profile" passHref legacyBehavior>
+                      <DropdownMenuItem
+                        className="w-full flex items-center cursor-pointer hover:bg-gray-100 
+                      dark:hover:bg-gray-800 transition-colors p-3 md:p-2"
+                      >
+                        <ShieldUser className="mr-2 h-4 w-4" /> Profile
+                      </DropdownMenuItem>
+                    </Link>
+                  </>
+                )}
+              </div>
+            </>
+          )}
 
           {/* Session Keys Section */}
           {user?.type !== "eoa" && (

@@ -4,7 +4,12 @@ import { NextPage } from "next";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect, useContext } from "react";
-import { base } from "viem/chains";
+import {
+  createAlchemyPublicRpcClient,
+  alchemy,
+  base,
+  baseSepolia,
+} from "@account-kit/infra";
 import {
   createPublicClient,
   createWalletClient,
@@ -13,6 +18,7 @@ import {
   type PublicClient,
   type WalletClient,
   type Account,
+  getContract,
 } from "viem";
 import { useUser } from "@account-kit/react";
 import { userToAccount } from "@/lib/types/account";
@@ -35,6 +41,8 @@ import {
   MembershipContext,
 } from "@/components/auth/MembershipGuard";
 import type { MembershipDetails } from "@/lib/hooks/unlock/useMembershipVerification";
+import { useUnlockNFTApi } from "@/lib/hooks/unlock/useMembershipVerification";
+import UnlockJson from "@/lib/contracts/Unlock.json";
 
 function useServerMembership(address?: string) {
   const [data, setData] = useState<any>(null);
@@ -113,13 +121,13 @@ const ProfilePage: NextPage = () => {
     membershipDetails as MembershipDetails[] | undefined
   )?.find((m: MembershipDetails) => m.isValid);
 
-  // Setup Viem clients
-  const publicClient = createPublicClient({
-    chain: base,
-    transport: http(
-      `https://base-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`
-    ),
-  }) as PublicClient;
+  // Setup Alchemy clients
+  const publicClient = createAlchemyPublicRpcClient({
+    transport: alchemy({
+      apiKey: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY as string,
+    }),
+    chain: baseSepolia,
+  });
 
   const walletClient =
     typeof window !== "undefined"
@@ -130,6 +138,36 @@ const ProfilePage: NextPage = () => {
       : null;
 
   const contractAddress = "0xf7c4cd399395d80f9d61fde833849106775269c6";
+
+  // Add Unlock NFT API hook
+  const {
+    data: unlockNftData,
+    isLoading: isUnlockNftLoading,
+    error: unlockNftError,
+  } = useUnlockNFTApi({
+    lockAddress: contractAddress,
+    userAddress: walletAddress ?? "",
+    network: 8453, // Base mainnet
+    enabled: Boolean(walletAddress),
+  });
+
+  // On-chain read from Unlock contract
+  const [lockCount, setLockCount] = useState<bigint | null>(null);
+  useEffect(() => {
+    async function fetchLockCount() {
+      const contract = getContract({
+        address: UnlockJson.address as `0x${string}`,
+        abi: UnlockJson.abi,
+        client: publicClient,
+      });
+      // Example: try to read a public view function, e.g., 'publicLockAddressCount' or similar
+      if (contract.read.publicLockAddressCount) {
+        const count = await contract.read.publicLockAddressCount();
+        setLockCount(count as bigint);
+      }
+    }
+    fetchLockCount();
+  }, [publicClient]);
 
   const [result, setResult] = useState<any>(null);
 
@@ -187,6 +225,22 @@ const ProfilePage: NextPage = () => {
                         balance={"0"}
                         points={0}
                       />
+                    )}
+                    {/* Unlock NFT API data display */}
+                    {isUnlockNftLoading && <div>Loading NFT data...</div>}
+                    {unlockNftError && (
+                      <div className="text-destructive">{unlockNftError}</div>
+                    )}
+                    {unlockNftData && (
+                      <pre className="mt-4 bg-muted p-2 rounded text-xs overflow-x-auto">
+                        {JSON.stringify(unlockNftData, null, 2)}
+                      </pre>
+                    )}
+                    {/* On-chain Unlock contract read display */}
+                    {lockCount !== null && (
+                      <div className="mt-2 text-xs text-muted-foreground">
+                        Unlock contract lock count: {lockCount.toString()}
+                      </div>
                     )}
                   </CardContent>
                   <CardFooter className="flex flex-wrap gap-2">
