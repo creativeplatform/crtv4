@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import {
   useMembershipVerification,
   type MembershipDetails,
-} from "../../lib/hooks/useMembershipVerification";
+} from "../../lib/hooks/unlock/useMembershipVerification";
 import { LoginWithEthereumButton } from "@/components/auth/LoginWithEthereumButton";
 import {
   Loader2,

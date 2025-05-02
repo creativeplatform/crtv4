@@ -47,7 +47,7 @@ import WertButton from "./wallet/buy/fund-button";
 import { TokenBalance } from "./wallet/balance/TokenBalance";
 import type { Chain as ViemChain } from "viem/chains";
 import { AccountDropdown } from "@/components/account-dropdown/AccountDropdown";
-import { useMembershipVerification } from "@/lib/hooks/useMembershipVerification";
+import { useMembershipVerification } from "@/lib/hooks/unlock/useMembershipVerification";
 import { MembershipSection } from "./account-dropdown/MembershipSection";
 
 type UseUserResult = (AccountUser & { type: "eoa" | "sca" }) | null;

@@ -1,7 +1,7 @@
-import { OrbisDB } from '@useorbis/db-sdk';
-import { ModelDefinition } from '@ceramicnetwork/stream-model';
-import { Asset } from 'livepeer/models/components';
-import { TVideoMetaForm } from '@app/components/Videos/Upload/Create-info';
+import { OrbisDB } from "@useorbis/db-sdk";
+import { ModelDefinition } from "@ceramicnetwork/stream-model";
+import { Asset } from "livepeer/models/components";
+import { TVideoMetaForm } from "@/components/Videos/Upload/Create-info";
 
 export type AssetMetadata = {
   assetId?: string;
@@ -26,7 +26,7 @@ export const createAssetMetadata = (
   livepeerAsset: Asset,
   metadata: TVideoMetaForm,
   thumbnailUri?: string,
-  subtitlesUri?: string,
+  subtitlesUri?: string
 ): AssetMetadata => {
   if (
     !livepeerAsset.id ||
@@ -34,7 +34,7 @@ export const createAssetMetadata = (
     !metadata.title ||
     !metadata.description
   ) {
-    throw new Error('Missing required asset metadata fields');
+    throw new Error("Missing required asset metadata fields");
   }
 
   return {
@@ -50,41 +50,41 @@ export const createAssetMetadata = (
 };
 
 export const AssetMetadataDef: ModelDefinition = {
-  name: 'CRTVAssetMetadata',
-  version: '2.0',
+  name: "CRTVAssetMetadata",
+  version: "2.0",
   interface: false,
   immutableFields: [],
   implements: [],
   accountRelation: {
-    type: 'list',
+    type: "list",
   },
   schema: {
-    type: 'object',
-    $schema: 'https://json-schema.org/draft/2020-12/schema',
+    type: "object",
+    $schema: "https://json-schema.org/draft/2020-12/schema",
     properties: {
       assetId: {
-        type: 'string',
+        type: "string",
       },
       playbackId: {
-        type: 'string',
+        type: "string",
       },
       title: {
-        type: 'string',
+        type: "string",
       },
       description: {
-        type: 'string',
+        type: "string",
       },
       location: {
-        type: 'string',
+        type: "string",
       },
       category: {
-        type: 'string',
+        type: "string",
       },
       thumbnailUri: {
-        type: 'string',
+        type: "string",
       },
       subtitlesUri: {
-        type: 'string',
+        type: "string",
       },
     },
     additionalProperties: false,
@@ -97,96 +97,90 @@ const createModel = async (modelDefinition: ModelDefinition, db: OrbisDB) =>
 export default createModel;
 
 // Subtitles Object Model
-// export const AssetMetadataModel = {
-//     "name": "AssetMetadata",
-//     "version": "1.0",
-//     "interface": false,
-//     "immutableFields": [],
-//     "implements": [],
-//     "accountRelation": {
-//         "type": "single"
-//     },
-//     "schema": {
-//         "$schema": "https://json-schema.org/draft/2020-12/schema",
-//         "type": "object",
-//         "properties": {
-//             "assetId": {
-//                 "type": "string"
-//             },
-//             "playbackId": {
-//                 "type": "string"
-//             },
-//             "title": {
-//                 "type": "string"
-//             },
-//             "description": {
-//                 "type": "string"
-//             },
-//             "location": {
-//                 "type": "string"
-//             },
-//             "category": {
-//                 "type": "string"
-//             },
-//             "thumbnailUri": {
-//                 "type": "string"
-//             },
-//             "subtitles": {
-//                 "type": "object",
-//                 "properties": {
-//                     "English": {
-//                         "type": "array",
-//                         "items": {
-//                             "$ref": "#/definitions/Subtitle"
-//                         }
-//                     },
-//                     "Chinese": {
-//                         "type": "array",
-//                         "items": {
-//                             "$ref": "#/definitions/Subtitle"
-//                         }
-//                     },
-//                     "German": {
-//                         "type": "array",
-//                         "items": {
-//                             "$ref": "#/definitions/Subtitle"
-//                         }
-//                     },
-//                     "Spanish": {
-//                         "type": "array",
-//                         "items": {
-//                             "$ref": "#/definitions/Subtitle"
-//                         }
-//                     },
-//                 },
-//                 "additionalProperties": false,
-//                 "$defs": {
-//                     "Subtitle": {
-//                         "type": "object",
-//                         "properties": {
-//                             "text": {
-//                                 "type": "string"
-//                             },
-//                             "startTime": {
-//                                 "type": "number"
-//                             },
-//                             "endTime": {
-//                                 "type": "number"
-//                             }
-//                         },
-//                         "additionalProperties": false
-//                     }
-//                 },
-//                 "required": []
-//             }
-//         },
-//         "additionalProperties": false,
-//         "required": [
-//             "assetId",
-//             "title",
-//             "description",
-//             "thumbnailUri",
-//             "subtitles"
-//         ],
-//     }
-// };
+export const AssetMetadataModel = {
+  name: "AssetMetadata",
+  version: "1.0",
+  interface: false,
+  immutableFields: [],
+  implements: [],
+  accountRelation: {
+    type: "single",
+  },
+  schema: {
+    $schema: "https://json-schema.org/draft/2020-12/schema",
+    type: "object",
+    properties: {
+      assetId: {
+        type: "string",
+      },
+      playbackId: {
+        type: "string",
+      },
+      title: {
+        type: "string",
+      },
+      description: {
+        type: "string",
+      },
+      location: {
+        type: "string",
+      },
+      category: {
+        type: "string",
+      },
+      thumbnailUri: {
+        type: "string",
+      },
+      subtitles: {
+        type: "object",
+        properties: {
+          English: {
+            type: "array",
+            items: {
+              $ref: "#/definitions/Subtitle",
+            },
+          },
+          Chinese: {
+            type: "array",
+            items: {
+              $ref: "#/definitions/Subtitle",
+            },
+          },
+          German: {
+            type: "array",
+            items: {
+              $ref: "#/definitions/Subtitle",
+            },
+          },
+          Spanish: {
+            type: "array",
+            items: {
+              $ref: "#/definitions/Subtitle",
+            },
+          },
+        },
+        additionalProperties: false,
+        $defs: {
+          Subtitle: {
+            type: "object",
+            properties: {
+              text: {
+                type: "string",
+              },
+              startTime: {
+                type: "number",
+              },
+              endTime: {
+                type: "number",
+              },
+            },
+            additionalProperties: false,
+          },
+        },
+        required: [],
+      },
+    },
+    additionalProperties: false,
+    required: ["assetId", "title", "description", "thumbnailUri", "subtitles"],
+  },
+};

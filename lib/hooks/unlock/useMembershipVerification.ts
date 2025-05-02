@@ -8,7 +8,7 @@ import {
   type LockAddress,
   type LockAddressValue,
   type MembershipError,
-} from "../sdk/unlock/services";
+} from "../../sdk/unlock/services";
 
 export interface MembershipDetails {
   name: LockAddress;
@@ -17,7 +17,7 @@ export interface MembershipDetails {
   lock: any | null; // Type from Unlock Protocol
 }
 
-interface MembershipStatus {
+export interface MembershipStatus {
   isVerified: boolean;
   hasMembership: boolean;
   isLoading: boolean;

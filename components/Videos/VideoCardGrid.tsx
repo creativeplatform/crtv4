@@ -89,6 +89,11 @@ const VideoCardGrid: React.FC = () => {
           (source) => source.detailedSrc !== null
         );
 
+        console.log(
+          "[VideoCardGrid] Valid playback sources:",
+          validPlaybackSources
+        );
+
         if (validPlaybackSources.length === 0) {
           setError("No valid videos available at the moment.");
           return;

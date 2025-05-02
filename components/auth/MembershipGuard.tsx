@@ -2,22 +2,28 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useMembershipVerification } from "@/lib/hooks/useMembershipVerification";
+import { useMembershipVerification } from "@/lib/hooks/unlock/useMembershipVerification";
 import { Loader2 } from "lucide-react";
+import { createContext, useContext } from "react";
+import type { MembershipStatus } from "@/lib/hooks/unlock/useMembershipVerification";
 
 interface MembershipGuardProps {
   children: React.ReactNode;
 }
 
+export const MembershipContext = createContext<MembershipStatus | null>(null);
+
 export function MembershipGuard({ children }: MembershipGuardProps) {
   const router = useRouter();
-  const { isVerified, hasMembership, isLoading } = useMembershipVerification();
+  const membership = useMembershipVerification();
+  const { isVerified, hasMembership, isLoading } = membership;
 
   useEffect(() => {
+    console.log("MembershipGuard:", membership);
     if (!isLoading && (!isVerified || !hasMembership)) {
       router.push("/");
     }
-  }, [isLoading, isVerified, hasMembership, router]);
+  }, [isLoading, isVerified, hasMembership, router, membership]);
 
   if (isLoading) {
     return (
@@ -31,5 +37,9 @@ export function MembershipGuard({ children }: MembershipGuardProps) {
     return null;
   }
 
-  return <>{children}</>;
+  return (
+    <MembershipContext.Provider value={membership}>
+      {children}
+    </MembershipContext.Provider>
+  );
 }

@@ -27,6 +27,13 @@ export const HERO_BUTTONS = {
   },
 };
 
+export const STEPPER_FORM_KEYS = {
+  1: ["title", "description", "location", "category"],
+  2: ["video"],
+  3: ["thumbnail"],
+  4: ["sell"],
+} as const;
+
 export const HERO_VIDEO_TITLE = "Creative TV Demo";
 
 // FEATURED VIDEO

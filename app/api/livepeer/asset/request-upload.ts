@@ -1,8 +1,7 @@
 "use server";
 
 import { NextApiRequest, NextApiResponse } from "next";
-import { fullLivepeer } from "../../../../lib/sdk/livepeer/fullClient";
-import { NewAssetFromUrlPayload } from "livepeer/models/components";
+import { fullLivepeer } from "@/lib/sdk/livepeer/fullClient";
 
 export default async function handler(
   req: NextApiRequest,
