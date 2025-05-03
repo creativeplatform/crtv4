@@ -277,20 +277,19 @@ export function AccountDropdown() {
   }, [account, user]);
 
   useEffect(() => {
-    async function updateDisplayAddress() {
-      if (user?.type === "eoa") {
-        if (user?.address) {
-          setDisplayAddress(
-            `${user.address.slice(0, 6)}...${user.address.slice(-4)}`
-          );
-        }
-      } else if (account?.address) {
-        setDisplayAddress(
-          `${account.address.slice(0, 6)}...${account.address.slice(-4)}`
-        );
-      }
-    }
-    updateDisplayAddress();
+    let newDisplayAddress = "";
+    if (user?.type === "eoa" && user?.address)
+      newDisplayAddress = `${user.address.slice(0, 6)}...${user.address.slice(
+        -4
+      )}`;
+    else if (account?.address)
+      newDisplayAddress = `${account.address.slice(
+        0,
+        6
+      )}...${account.address.slice(-4)}`;
+    // Only update if value actually changes
+    if (displayAddress !== newDisplayAddress)
+      setDisplayAddress(newDisplayAddress);
   }, [user, account]);
 
   useEffect(() => {

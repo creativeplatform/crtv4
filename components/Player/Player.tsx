@@ -14,6 +14,7 @@ import {
 import { useVideo } from "@/context/VideoContext";
 import "./Player.css";
 import { Src } from "@livepeer/react";
+import { SubtitlesControl } from "./Subtitles";
 
 export const PlayerLoading: React.FC<{ title: string }> = ({ title }) => {
   return (
@@ -122,27 +123,161 @@ export function Player(props: {
     );
   }
 
-  // Simplified player for debugging
   return (
-    <div ref={containerRef} className="player-container">
-      <LivepeerPlayer.Root
-        src={sourceArray}
-        autoPlay={false}
-        volume={0.5}
-        aspectRatio={16 / 9}
-        onError={(error: PlaybackError | null) => {
-          if (error) console.error("Player error:", error);
-        }}
+    <LivepeerPlayer.Root
+      src={src}
+      autoPlay={false}
+      volume={0.5}
+      aspectRatio={16 / 9}
+    >
+      <LivepeerPlayer.Container
+        ref={containerRef}
+        className="relative aspect-video touch-none"
+        onMouseMove={resetFadeTimeout}
+        onMouseEnter={() => setControlsVisible(true)}
+        onTouchStart={handleControlInteraction}
       >
-        <LivepeerPlayer.Container>
-          <LivepeerPlayer.Video
-            className="h-full w-full"
-            title={title}
-            playsInline
-            controls={true}
-          />
-        </LivepeerPlayer.Container>
-      </LivepeerPlayer.Root>
-    </div>
+        <LivepeerPlayer.Video
+          title={title}
+          className="h-full w-full"
+          playsInline
+          controls={false}
+        />
+
+        <LivepeerPlayer.LoadingIndicator
+          style={{
+            height: "100%",
+            width: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "black",
+            position: "absolute",
+            top: 0,
+            left: 0,
+            zIndex: 20,
+          }}
+        >
+          <div className="flex flex-col items-center space-y-4">
+            <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+            <div className="text-lg font-semibold text-white">Loading...</div>
+          </div>
+        </LivepeerPlayer.LoadingIndicator>
+
+        <div
+          className={`pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 
+              via-transparent to-black/60 transition-opacity duration-300 ${
+                controlsVisible ? "opacity-100" : "opacity-0"
+              }`}
+        />
+
+        <div
+          className={`absolute inset-0 z-30 touch-none transition-opacity duration-300 ${
+            controlsVisible ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="flex items-center gap-6">
+              <LivepeerPlayer.PlayPauseTrigger
+                className="group relative flex h-16 w-16 cursor-pointer touch-none items-center 
+                  justify-center rounded-full bg-black/50 hover:bg-black/70"
+                onClick={handleControlInteraction}
+              >
+                <LivepeerPlayer.PlayingIndicator asChild matcher={false}>
+                  <PlayIcon className="h-10 w-10 text-white" />
+                </LivepeerPlayer.PlayingIndicator>
+                <LivepeerPlayer.PlayingIndicator asChild>
+                  <PauseIcon className="h-10 w-10 text-white" />
+                </LivepeerPlayer.PlayingIndicator>
+              </LivepeerPlayer.PlayPauseTrigger>
+
+              <LivepeerPlayer.MuteTrigger
+                className="group relative flex h-14 w-14 cursor-pointer touch-none items-center 
+                  justify-center rounded-full bg-black/50 hover:bg-black/70"
+                onClick={handleControlInteraction}
+              >
+                <LivepeerPlayer.VolumeIndicator asChild matcher={false}>
+                  <MuteIcon className="h-8 w-8 text-white" />
+                </LivepeerPlayer.VolumeIndicator>
+                <LivepeerPlayer.VolumeIndicator asChild matcher={true}>
+                  <UnmuteIcon className="h-8 w-8 text-white" />
+                </LivepeerPlayer.VolumeIndicator>
+              </LivepeerPlayer.MuteTrigger>
+            </div>
+          </div>
+
+          <div className="absolute bottom-0 left-0 right-0">
+            <div className="flex items-center justify-between px-5 pb-8">
+              <LivepeerPlayer.Time className="rounded-full bg-black/40 px-2 py-0.5 text-xs font-medium tabular-nums text-white/90" />
+
+              <div className="flex items-center gap-4">
+                <LivepeerPlayer.FullscreenTrigger
+                  className="group relative flex h-10 w-10 cursor-pointer 
+                  touch-none items-center justify-center rounded-full bg-black/50 hover:bg-black/70"
+                >
+                  <LivepeerPlayer.FullscreenIndicator asChild matcher={false}>
+                    <EnterFullscreenIcon className="h-6 w-6 text-white" />
+                  </LivepeerPlayer.FullscreenIndicator>
+                  <LivepeerPlayer.FullscreenIndicator asChild>
+                    <ExitFullscreenIcon className="h-6 w-6 text-white" />
+                  </LivepeerPlayer.FullscreenIndicator>
+                </LivepeerPlayer.FullscreenTrigger>
+              </div>
+            </div>
+
+            <LivepeerPlayer.Seek
+              style={{
+                position: "absolute",
+                left: 20,
+                right: 20,
+                bottom: 20,
+                height: 20,
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                userSelect: "none",
+                touchAction: "none",
+              }}
+            >
+              <LivepeerPlayer.Track
+                style={{
+                  backgroundColor: "rgba(255, 255, 255, 0.7)",
+                  position: "relative",
+                  flexGrow: 1,
+                  borderRadius: 9999,
+                  height: 2,
+                }}
+              >
+                <LivepeerPlayer.SeekBuffer
+                  style={{
+                    position: "absolute",
+                    backgroundColor: "rgba(0, 0, 0, 0.5)",
+                    borderRadius: 9999,
+                    height: "100%",
+                  }}
+                />
+                <LivepeerPlayer.Range
+                  style={{
+                    position: "absolute",
+                    backgroundColor: "white",
+                    borderRadius: 9999,
+                    height: "100%",
+                  }}
+                />
+              </LivepeerPlayer.Track>
+              <LivepeerPlayer.Thumb
+                style={{
+                  display: "block",
+                  width: 12,
+                  height: 12,
+                  backgroundColor: "white",
+                  borderRadius: 9999,
+                }}
+              />
+            </LivepeerPlayer.Seek>
+          </div>
+        </div>
+      </LivepeerPlayer.Container>
+    </LivepeerPlayer.Root>
   );
 }

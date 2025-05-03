@@ -72,7 +72,7 @@ export default function VideoDetails({ asset }: VideoDetailsProps) {
     };
     fetchPlaybackSources();
     fetchAssetMetadata();
-    const conProps = {
+    const conProps: Record<string, unknown> = {
       ...(asset.playbackPolicy && {
         accessKey: generateAccessKey(
           account?.address,
@@ -80,7 +80,14 @@ export default function VideoDetails({ asset }: VideoDetailsProps) {
         ),
       }),
     };
-    setConditionalProps(conProps);
+    setConditionalProps((prev: Record<string, unknown>) => {
+      if (
+        Object.keys(prev).length === Object.keys(conProps).length &&
+        Object.keys(prev).every((key) => prev[key] === conProps[key])
+      )
+        return prev;
+      return conProps;
+    });
   }, [account, asset, getAssetMetadata]);
 
   const Seek = forwardRef<HTMLButtonElement, Player.SeekProps>(
