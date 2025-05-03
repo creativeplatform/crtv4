@@ -10,9 +10,6 @@ import React, {
 } from "react";
 import type { CSSProperties } from "react"; // Use named import with `type`
 import { FaClosedCaptioning } from "react-icons/fa";
-
-// Rest of your code...
-
 import {
   MediaScopedProps,
   useMediaContext,
