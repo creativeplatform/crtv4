@@ -290,7 +290,7 @@ export function AccountDropdown() {
     // Only update if value actually changes
     if (displayAddress !== newDisplayAddress)
       setDisplayAddress(newDisplayAddress);
-  }, [user, account]);
+  }, [user, account, displayAddress]);
 
   useEffect(() => {
     const checkNetworkStatus = async () => {

@@ -8,7 +8,6 @@ export type StepperFormValues = {
     | "Video Details"
     | "Upload Video"
     | "Thumbnail"
-    | "Sell"
     ? number
     : string;
 };
