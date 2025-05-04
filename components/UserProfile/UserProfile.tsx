@@ -2,7 +2,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { NextPage } from "next";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useState, useEffect, useContext } from "react";
 import {
   createAlchemyPublicRpcClient,
@@ -10,16 +10,6 @@ import {
   base,
   baseSepolia,
 } from "@account-kit/infra";
-import {
-  createPublicClient,
-  createWalletClient,
-  custom,
-  http,
-  type PublicClient,
-  type WalletClient,
-  type Account,
-  getContract,
-} from "viem";
 import { useUser } from "@account-kit/react";
 import { userToAccount } from "@/lib/types/account";
 import { ListUploadedAssets } from "@/components/UserProfile/list-uploaded-assets/ListUploadedAssets";
@@ -34,15 +24,11 @@ import {
 import MemberCard from "./MemberCard";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { FaExclamationTriangle } from "react-icons/fa";
-import { Button } from "../ui/button";
-import { useProfile } from "./useProfile";
 import {
   MembershipGuard,
   MembershipContext,
 } from "@/components/auth/MembershipGuard";
 import type { MembershipDetails } from "@/lib/hooks/unlock/useMembershipVerification";
-import { useUnlockNFTApi } from "@/lib/hooks/unlock/useMembershipVerification";
-import UnlockJson from "@/lib/contracts/Unlock.json";
 
 function useServerMembership(address?: string) {
   const [data, setData] = useState<any>(null);
@@ -83,24 +69,6 @@ function ProfilePageGuard({ children }: { children: React.ReactNode }) {
 }
 
 const ProfilePage: NextPage = () => {
-  const { user } = useParams();
-  const [transferAddress, setTransferAddress] = useState("");
-  const [lendingAddress, setLendingAddress] = useState("");
-  const [subscribed, setSubscribed] = useState(false);
-  const activeAccount = useUser();
-  const account = userToAccount(activeAccount);
-
-  const {
-    memberData,
-    nftData,
-    balance,
-    points,
-    isLoading,
-    handleRenewMembership,
-    handleCancelMembership,
-    ownedIds,
-  } = useProfile(account);
-
   const membership = useContext(MembershipContext);
   const {
     isLoading: membershipLoading,
@@ -129,52 +97,9 @@ const ProfilePage: NextPage = () => {
     chain: baseSepolia,
   });
 
-  const walletClient =
-    typeof window !== "undefined"
-      ? (createWalletClient({
-          chain: base,
-          transport: custom(window.ethereum),
-        }) as WalletClient)
-      : null;
-
-  const contractAddress = "0xf7c4cd399395d80f9d61fde833849106775269c6";
-
-  // Add Unlock NFT API hook
-  const {
-    data: unlockNftData,
-    isLoading: isUnlockNftLoading,
-    error: unlockNftError,
-  } = useUnlockNFTApi({
-    lockAddress: contractAddress,
-    userAddress: walletAddress ?? "",
-    network: 8453, // Base mainnet
-    enabled: Boolean(walletAddress),
-  });
-
-  // On-chain read from Unlock contract
-  const [lockCount, setLockCount] = useState<bigint | null>(null);
-  useEffect(() => {
-    async function fetchLockCount() {
-      const contract = getContract({
-        address: UnlockJson.address as `0x${string}`,
-        abi: UnlockJson.abi,
-        client: publicClient,
-      });
-      // Example: try to read a public view function, e.g., 'publicLockAddressCount' or similar
-      if (contract.read.publicLockAddressCount) {
-        const count = await contract.read.publicLockAddressCount();
-        setLockCount(count as bigint);
-      }
-    }
-    fetchLockCount();
-  }, [publicClient]);
-
-  const [result, setResult] = useState<any>(null);
-
   if (loading) return <div>Loading...</div>;
   if (serverMembershipError)
     return <div className="text-destructive">{serverMembershipError}</div>;
-  if (!memberships) return <div>No membership data</div>;
 
   return (
     <ProfilePageGuard>
@@ -218,30 +143,18 @@ const ProfilePage: NextPage = () => {
                         {membershipError.message}
                       </div>
                     )}
-                    {!membershipLoading && !membershipError && (
-                      <MemberCard
-                        member={{ address: walletAddress }}
-                        nft={validMembership?.lock}
-                        balance={"0"}
-                        points={0}
-                      />
-                    )}
-                    {/* Unlock NFT API data display */}
-                    {isUnlockNftLoading && <div>Loading NFT data...</div>}
-                    {unlockNftError && (
-                      <div className="text-destructive">{unlockNftError}</div>
-                    )}
-                    {unlockNftData && (
-                      <pre className="mt-4 bg-muted p-2 rounded text-xs overflow-x-auto">
-                        {JSON.stringify(unlockNftData, null, 2)}
-                      </pre>
-                    )}
-                    {/* On-chain Unlock contract read display */}
-                    {lockCount !== null && (
-                      <div className="mt-2 text-xs text-muted-foreground">
-                        Unlock contract lock count: {lockCount.toString()}
-                      </div>
-                    )}
+                    {!membershipLoading &&
+                      !membershipError &&
+                      (memberships && memberships.length > 0 ? (
+                        <MemberCard
+                          member={{ address: walletAddress }}
+                          nft={validMembership?.lock}
+                          balance={"0"}
+                          points={0}
+                        />
+                      ) : (
+                        <div>No membership data</div>
+                      ))}
                   </CardContent>
                   <CardFooter className="flex flex-wrap gap-2">
                     {/* Add membership actions here if needed */}
