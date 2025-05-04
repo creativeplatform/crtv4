@@ -36,5 +36,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# windsurf rules
+# AI rules
 .windsurfrules
+.cursor
