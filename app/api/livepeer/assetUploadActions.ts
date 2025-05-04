@@ -1,8 +1,8 @@
 "use server";
 
 import { Type, InputCreatorIdType } from "livepeer/models/components";
-import { fullLivepeer } from "../../../lib/sdk/livepeer/fullClient";
-import { WebhookContext } from "../livepeer/token-gate/route";
+import { fullLivepeer } from "@/lib/sdk/livepeer/fullClient";
+import { WebhookContext } from "./token-gate/route";
 
 export const getLivepeerUploadUrl = async (
   fileName: string,

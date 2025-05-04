@@ -11,12 +11,19 @@ const FeaturedVideo: React.FC = () => {
   const [playbackSource, setPlaybackSource] = useState<Src[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { currentPlayingId } = useVideo();
 
   useEffect(() => {
     const loadPlaybackSource = async () => {
       try {
+        setIsLoading(true);
+        setError(null);
         const src = await getFeaturedPlaybackSource();
+
+        if (!src || src.length === 0) {
+          setError("No playback source available");
+          return;
+        }
+
         setPlaybackSource(src);
       } catch (err) {
         setError("Failed to load featured video");

@@ -8,6 +8,7 @@ import { Providers } from "./providers";
 import Navbar from "@/components/Navbar";
 import { cn } from "@/lib/utils/utils";
 import { Toaster } from "@/components/ui/toaster";
+import Footer from "@/components/Footer";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -39,6 +40,7 @@ export default async function RootLayout({
         <Providers initialState={initialState}>
           <Navbar />
           {children}
+          <Footer />
         </Providers>
         <Toaster />
       </body>

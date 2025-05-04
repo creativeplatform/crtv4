@@ -33,6 +33,11 @@ const nextConfig = {
         hostname: "gateway.pinata.cloud",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "*.googleapis.com",
+        pathname: "/**",
+      },
     ],
   },
 };

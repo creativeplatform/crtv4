@@ -11,6 +11,7 @@ import {
   type GetContractReturnType,
 } from "viem";
 import { base } from "@account-kit/infra";
+import { ethers } from "ethers";
 
 // Use the official PublicLockV14 ABI from Unlock Protocol
 const lockAbi = PublicLockV14Json.abi;
@@ -49,6 +50,15 @@ const networks = {
     unlockAddress: "0xc0b4159e91e1f9f8adf1d3a9dd1d672c9d0c3f5f",
     publicLockLatestVersion: 14,
   },
+  1: {
+    unlockAddress: "0x3d5409cce1d45233de1d4ebdee74b8e004abdd13", // Mainnet
+    provider: "https://rpc.unlock-protocol.com/1",
+  },
+  5: {
+    unlockAddress: "0x627118a4fB747016911e5cDA82e2E77C531e8206", // Goerli
+    provider: "https://rpc.unlock-protocol.com/5",
+  },
+  // Add other networks as needed
 };
 
 const web3Service = new Web3Service(networks);
@@ -372,3 +382,26 @@ export class UnlockService {
 
 // Export singleton instance
 export const unlockService = new UnlockService();
+
+export interface FetchLockAndKeyParams {
+  lockAddress: string;
+  userAddress: string;
+  network: number;
+}
+
+export async function fetchLockAndKey({
+  lockAddress,
+  userAddress,
+  network,
+}: FetchLockAndKeyParams) {
+  const web3Service = new Web3Service(networks);
+  // Fetch lock details
+  const lock = await web3Service.getLock(lockAddress, network);
+  // Fetch key (NFT) for user
+  const key = await web3Service.getKeyByLockForOwner(
+    lockAddress,
+    userAddress,
+    network
+  );
+  return { lock, key };
+}

@@ -47,10 +47,27 @@ import { LIVEPEER_FEATURED_PLAYBACK_ID } from "../../../context/context";
 
 export const getFeaturedPlaybackSource = async (): Promise<Src[]> => {
   try {
+    console.log(
+      "Fetching featured playback source for ID:",
+      LIVEPEER_FEATURED_PLAYBACK_ID
+    );
     const playbackInfo = await fullLivepeer.playback.get(
       LIVEPEER_FEATURED_PLAYBACK_ID
     );
-    const src = getSrc(playbackInfo?.playbackInfo) as Src[];
+
+    if (!playbackInfo?.playbackInfo) {
+      console.error("No playback info found for featured video");
+      return [];
+    }
+
+    const src = getSrc(playbackInfo.playbackInfo) as Src[];
+
+    if (!src || src.length === 0) {
+      console.error("No valid sources generated for featured video");
+      return [];
+    }
+
+    console.log("Successfully fetched featured playback source:", src);
     return src;
   } catch (error) {
     console.error("Error fetching featured playback source:", error);

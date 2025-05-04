@@ -1,13 +1,13 @@
-'use server';
-import { fullLivepeer } from '../../../lib/sdk/livepeer/fullClient';
-import { TextToImageParams } from 'livepeer/models/components';
+"use server";
+import { fullLivepeer } from "@/lib/sdk/livepeer/fullClient";
+import { TextToImageParams } from "livepeer/models/components";
 
 export const getLivepeerAiGeneratedImages = async (
-  params: TextToImageParams,
+  params: TextToImageParams
 ) => {
   const result = await fullLivepeer.generate.textToImage(params);
 
-  console.log('txt to image', result);
+  console.log("txt to image", result);
 
   return result.imageResponse;
 };

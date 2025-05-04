@@ -1,16 +1,10 @@
 "use server";
 
 import { NextRequest, NextResponse } from "next/server";
-import {
-  createPublicClient,
-  Address,
-  getContract,
-  PublicClient,
-  parseAbiItem,
-} from "viem";
+import { createPublicClient, Address } from "viem";
 import { alchemy, baseSepolia, base, optimism } from "@account-kit/infra";
 import type { Chain } from "viem";
-import { generateAccessKey, validateAccessKey } from "../access-key";
+import { generateAccessKey, validateAccessKey } from "@/lib/access-key";
 import { getSmartAccountClient } from "@account-kit/core";
 import { config } from "@/config";
 
@@ -150,10 +144,13 @@ export async function GET(request: NextRequest) {
     }
 
     const accessKey = generateAccessKey(address, {
-      creatorAddress,
-      tokenId,
-      contractAddress,
-      chain,
+      type: "token-gate",
+      rules: {
+        chain,
+        contractAddress,
+        tokenId,
+        creatorAddress,
+      },
     });
 
     console.log({ accessKey });
@@ -205,11 +202,15 @@ async function validateAccess(payload: WebhookPayload): Promise<boolean> {
     if (!client || !client.address) return false;
 
     // Validate the access key
-    const isValidKey = await validateAccessKey(
-      accessKey,
-      client.address,
-      context
-    );
+    const isValidKey = validateAccessKey(accessKey, client.address, {
+      type: "token-gate",
+      rules: {
+        chain: context.chain,
+        contractAddress: context.contractAddress,
+        tokenId: context.tokenId,
+        creatorAddress: context.creatorAddress,
+      },
+    });
     if (!isValidKey) return false;
 
     // Check if user has required token balance
