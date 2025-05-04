@@ -18,7 +18,7 @@ import { Src } from "@livepeer/react";
 import makeBlockie from "ethereum-blockies-base64";
 import VideoViewMetrics from "./VideoViewMetrics";
 import { useVideo } from "@/context/VideoContext";
-import { useRef, useEffect } from "react";
+import { useRef } from "react";
 
 interface VideoCardProps {
   asset: Asset;
@@ -28,36 +28,6 @@ interface VideoCardProps {
 const VideoCard: React.FC<VideoCardProps> = ({ asset, playbackSources }) => {
   const { currentPlayingId, setCurrentPlayingId } = useVideo();
   const playerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const player = playerRef.current;
-    const videoElement = player?.querySelector("video");
-    if (
-      videoElement &&
-      !videoElement.paused &&
-      currentPlayingId !== asset?.id
-    ) {
-      try {
-        videoElement.pause();
-      } catch (error) {
-        console.error("Error pausing video:", error);
-      }
-    }
-
-    return () => {
-      const videoElement = player?.querySelector("video");
-      if (videoElement && !videoElement.paused) {
-        try {
-          videoElement.pause();
-          if (currentPlayingId === asset?.id) {
-            setCurrentPlayingId(null);
-          }
-        } catch (error) {
-          console.error("Error cleaning up video:", error);
-        }
-      }
-    };
-  }, [currentPlayingId, asset?.id, setCurrentPlayingId]);
 
   const handlePlay = () => {
     try {

@@ -1,16 +1,11 @@
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   useMembershipVerification,
   type MembershipDetails,
-} from "../../lib/hooks/useMembershipVerification";
+} from "../../lib/hooks/unlock/useMembershipVerification";
 import { LoginWithEthereumButton } from "@/components/auth/LoginWithEthereumButton";
-import {
-  Loader2,
-  LockKeyhole,
-  ShieldCheck,
-  ShieldX,
-  AlertTriangle,
-} from "lucide-react";
+import { LockKeyhole, ShieldCheck, ShieldX, AlertTriangle } from "lucide-react";
 import {
   LOCK_ADDRESSES,
   type LockAddressValue,
@@ -46,8 +41,16 @@ export function MembershipSection({ className }: MembershipSectionProps) {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-2">
-        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+      <div className="p-4 space-y-4">
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-4 w-4" />
+          <Skeleton className="h-4 w-24" />
+        </div>
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-4 w-24" />
+        </div>
+        <Skeleton className="h-8 w-full" />
       </div>
     );
   }

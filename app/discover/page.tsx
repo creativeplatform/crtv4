@@ -58,10 +58,10 @@ const AllVideosContent: React.FC = () => {
         <VideoCardGrid />
       </div>
       {/*Orbis Videos Section */}
-      <div>
+      {/* <div>
         <h2 className="my-4 text-2xl font-bold">All Videos</h2>
         <OrbisVideoCardGrid />
-      </div>
+      </div> */}
     </div>
   );
 };

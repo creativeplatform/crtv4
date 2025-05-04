@@ -1,3 +1,70 @@
+/**
+ * ORBIS CONTEXT PROVIDER
+ * ======================
+ * 
+ * This file implements a React context provider that integrates Orbis DB (a decentralized database)
+ * with Account Kit authentication. It serves as the central authentication and data management
+ * system for the application.
+ * 
+ * KEY COMPONENTS:
+ * --------------
+ * 1. Context Setup:
+ *    - Creates a React context (OrbisContext) that provides authentication state and database operations
+ *    - Uses Account Kit for wallet connections and authentication
+ *    - Implements a hook (useOrbisContext) to easily access Orbis functionality throughout the app
+ * 
+ * 2. Authentication Flow:
+ *    - Integrates with Account Kit for Web3 authentication
+ *    - Supports email-based authentication with OTP
+ *    - Uses OrbisEVMAuth to connect with Ethereum-based wallets
+ *    - Maintains persistent sessions with local storage caching (24-hour expiry)
+ *    - Provides login/logout functionality with proper state management
+ * 
+ * 3. Database Operations:
+ *    - Provides CRUD operations (insert, replace, update, select) for Orbis DB
+ *    - Input validation for all DB operations via validateDbOperation
+ *    - Error handling with proper logging through the application
+ *    - Context-aware database operations using environment variables
+ * 
+ * 4. Asset Metadata Handling:
+ *    - Specialized functions to fetch and process asset metadata
+ *    - Support for fetching and parsing subtitles from external URIs
+ *    - Type-safe implementation with TypeScript interfaces
+ * 
+ * IMPLEMENTATION NOTES:
+ * -------------------
+ * - Uses dynamic imports to prevent SSR issues with Orbis library
+ * - Implements session caching to reduce authentication calls
+ * - Validates required environment variables before operations
+ * - Provides proper error handling and reporting
+ * 
+ * REQUIRED ENVIRONMENT VARIABLES:
+ * -----------------------------
+ * - NEXT_PUBLIC_CERAMIC_NODE_URL: URL for the Ceramic network node
+ * - NEXT_PUBLIC_ORBIS_NODE_URL: URL for the Orbis node
+ * - NEXT_PUBLIC_ORBIS_ENVIRONMENT_ID: Orbis environment identifier
+ * - NEXT_PUBLIC_ORBIS_ASSET_METADATA_MODEL_ID: Model ID for asset metadata
+ * - NEXT_PUBLIC_ORBIS_CRTV_CONTEXT_ID: Context ID for CRTV application
+ * - NEXT_PUBLIC_ORBIS_CRTV_VIDEOS_CONTEXT_ID: Context ID for CRTV videos
+ * - NEXT_PUBLIC_METOKEN_METADATA_MODEL_ID: Model ID for metoken metadata
+ * 
+ * USAGE:
+ * -----
+ * 1. Wrap your application with OrbisProvider at a high level in the component tree
+ * 2. Use the useOrbisContext hook in components that need authentication or database access
+ * 3. Check authentication status via authResult or isConnected
+ * 4. Perform database operations using context functions (insert, update, etc.)
+ * 
+ * KNOWN LIMITATIONS:
+ * ----------------
+ * - Error handling relies on console logging; may need integration with a monitoring service
+ * - Type safety could be improved for certain operations (any types present)
+ * - Session management uses local storage which has size limitations
+ * - The generateEventUniqueId function is defined but not used in the current implementation
+ * 
+ * @lastUpdated May 4, 2025
+ */
+
 "use client";
 
 import React, {
@@ -59,16 +126,16 @@ interface OrbisContextProps {
 
 const defaultContext: OrbisContextProps = {
   authResult: null,
-  setAuthResult: () => {},
-  insert: async () => {},
-  replace: async () => {},
-  update: async () => {},
+  setAuthResult: () => { },
+  insert: async () => { },
+  replace: async () => { },
+  update: async () => { },
   getAssetMetadata: async () => null,
   orbisLogin: async () => null,
   isConnected: async () => false,
-  getCurrentUser: async () => {},
-  insertMetokenMetadata: async () => {},
-  logout: async () => {},
+  getCurrentUser: async () => { },
+  insertMetokenMetadata: async () => { },
+  logout: async () => { },
   user: null,
 } as const;
 
