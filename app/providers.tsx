@@ -8,6 +8,8 @@ import { ThemeProvider } from "next-themes";
 import { Toaster } from "sonner";
 import { VideoProvider } from "../context/VideoContext";
 import { ErrorBoundary } from "next/dist/client/components/error-boundary";
+import { ApolloNextAppProvider } from "@apollo/client-integration-nextjs";
+import { makeClient } from "./apolloWrapper";
 
 function ErrorFallback({ error }: { error: Error }) {
   return (
@@ -34,16 +36,18 @@ export const Providers = (
       >
         <QueryClientProvider client={queryClient}>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            <AlchemyAccountProvider
-              config={config}
-              queryClient={queryClient}
-              initialState={props.initialState}
-            >
-              <VideoProvider>
-                {props.children}
-                <Toaster position="top-right" richColors />
-              </VideoProvider>
-            </AlchemyAccountProvider>
+            <ApolloNextAppProvider makeClient={makeClient}>
+              <AlchemyAccountProvider
+                config={config}
+                queryClient={queryClient}
+                initialState={props.initialState}
+              >
+                <VideoProvider>
+                  {props.children}
+                  <Toaster position="top-right" richColors />
+                </VideoProvider>
+              </AlchemyAccountProvider>
+            </ApolloNextAppProvider>
           </ThemeProvider>
         </QueryClientProvider>
       </Suspense>
