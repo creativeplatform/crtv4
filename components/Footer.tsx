@@ -15,12 +15,9 @@ export default function Component() {
             <Image
               src={SITE_LOGO}
               alt="Creative Logo"
-              style={{
-                width: "20px",
-                height: "auto",
-              }}
               width={20}
               height={20}
+              style={{ width: 20, height: "auto", maxHeight: 20 }}
               className="object-contain"
             />
             <span

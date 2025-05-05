@@ -2,38 +2,33 @@
 import { Web3Service } from "@unlock-protocol/unlock-js";
 import PublicLockV14Json from "@unlock-protocol/contracts/dist/abis/PublicLock/PublicLockV14.json";
 import {
-  createPublicClient,
-  http,
-  fallback,
   type PublicClient,
-  custom,
   getContract,
   type GetContractReturnType,
 } from "viem";
-import { base } from "@account-kit/infra";
-import { ethers } from "ethers";
+import { alchemy, base } from "@account-kit/infra";
+import { createAlchemyPublicRpcClient } from "@account-kit/infra";
+
+// Use environment variables for sensitive data
+const alchemyRpcUrl = process.env.NEXT_PUBLIC_ALCHEMY_BASE_RPC_URL;
+
+// Create the Account Kit client
+const accountKitClient = createAlchemyPublicRpcClient({
+  transport: alchemy({
+    apiKey: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY as string,
+  }),
+  chain: base,
+});
 
 // Use the official PublicLockV14 ABI from Unlock Protocol
 const lockAbi = PublicLockV14Json.abi;
-
-// Create a public client with fallback RPC endpoints for Base mainnet
-const client = createPublicClient({
-  chain: base,
-  transport: fallback([
-    http("https://mainnet.base.org"),
-    http("https://base.g.alchemy.com/v2/demo"),
-  ]),
-  batch: {
-    multicall: true,
-  },
-});
 
 // Create a Viem-based provider for Web3Service
 const provider = {
   async request(args: { method: string; params?: any[] }) {
     try {
       // @ts-ignore - client.request is typed differently but compatible
-      return await client.request(args);
+      return await accountKitClient.request(args);
     } catch (error) {
       console.error("Provider request error:", error);
       throw error;
@@ -98,7 +93,7 @@ export class UnlockService {
   private client: PublicClient;
 
   constructor() {
-    this.client = client;
+    this.client = accountKitClient;
   }
 
   private createError(
@@ -127,8 +122,8 @@ export class UnlockService {
   ): Promise<boolean> {
     try {
       console.log("Checking balance with chain:", {
-        id: client.chain.id,
-        name: client.chain.name,
+        id: this.client.chain?.id,
+        name: this.client.chain?.name,
       });
 
       const contract = this.getContract(lockAddress);

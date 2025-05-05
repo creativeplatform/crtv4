@@ -38,6 +38,11 @@ const nextConfig = {
         hostname: "*.googleapis.com",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "snapshotsplugin.s3.us-west-2.amazonaws.com",
+        pathname: "/**",
+      },
     ],
   },
 };
