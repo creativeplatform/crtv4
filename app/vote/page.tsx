@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -8,6 +8,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Slash } from "lucide-react";
+import { ProposalList } from "@/components/proposal-list/ProposalList";
 // import Vote from "@/components/Voting/Index";
 
 export default function VotePage() {
@@ -41,7 +42,11 @@ export default function VotePage() {
       <div className="mt-5">
         <p>Have your say in the future of the Creative ecosystem.</p>
       </div>
-      <div className="p-4">{/* <Vote /> */}</div>
+      <div className="p-4">
+        <Suspense fallback={<div>Loading proposals...</div>}>
+          <ProposalList space="vote.thecreative.eth" />
+        </Suspense>
+      </div>
     </div>
   );
 }
