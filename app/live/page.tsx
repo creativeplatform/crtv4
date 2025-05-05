@@ -71,7 +71,9 @@ export default function LivePage() {
             </Breadcrumb>
           </div>
           <div>
-            <Broadcast streamKey={"24dc-z32j-qafy-yskq"} />
+            <Broadcast
+              streamKey={process.env.NEXT_PUBLIC_STREAM_KEY as string}
+            />
           </div>
         </div>
       </MembershipGuard>
