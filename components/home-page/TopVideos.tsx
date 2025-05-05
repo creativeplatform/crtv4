@@ -174,7 +174,10 @@ export function TopVideos() {
           {Array.from({ length: 3 }).map((_, index) => (
             <div
               key={index}
-              className="h-[300px] animate-pulse rounded-lg bg-gray-200"
+              className={[
+                "h-[300px] animate-pulse rounded-lg bg-gray-200",
+                index > 0 ? "hidden sm:block" : "",
+              ].join(" ")}
             />
           ))}
         </div>
