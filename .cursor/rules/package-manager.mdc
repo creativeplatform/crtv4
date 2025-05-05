@@ -1,8 +1,0 @@
----
-description: 
-globs: 
-alwaysApply: true
----
-# Package Commands
-- Always use yarn.
-- Use context7 for reference and clarity.

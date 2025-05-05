@@ -17,14 +17,12 @@ CRTV4 is built on a modular architecture that integrates several key technologie
 
 ### Web3 Stack
 
-- **Lit Protocol**: For decentralized authentication, PKP (Programmable Key Pair) management, and smart account functionalities
 - **Account Kit by Alchemy**: For account abstraction, simplified onboarding, and wallet interactions
 - **Livepeer**: For decentralized video streaming infrastructure with token-gating capabilities
 - **Viem & Wagmi**: For Ethereum interactions and hooks
 
 ## 📚 Key Features
 
-- **Wallet-less Authentication**: Using Lit Protocol's PKP system for seamless user onboarding
 - **Smart Accounts**: Account abstraction for improved UX and transaction management
 - **Decentralized Video Hosting**: Leveraging Livepeer for reliable, censorship-resistant video content
 - **Token-Gated Content**: Access control for premium content using NFTs
@@ -46,7 +44,6 @@ app/                  # Next.js app directory with file-based routing
 components/           # React components
   ui/                 # UI components from shadcn/ui
   Player/             # Video player components
-  lit/                # Lit Protocol-specific components
   wallet/             # Wallet-related components
 context/              # React context providers
   LitContext.tsx      # Lit Protocol context
@@ -54,10 +51,8 @@ context/              # React context providers
 lib/                  # Utility functions and SDK integrations
   hooks/              # Custom React hooks
     accountkit/       # Account Kit hooks
-    lit/              # Lit Protocol hooks
     livepeer/         # Livepeer hooks
   sdk/                # SDK integrations
-    lit/              # Lit Protocol SDK setup
     livepeer/         # Livepeer SDK setup
     accountKit/       # Account Kit SDK setup
   utils/              # Utility functions
@@ -71,7 +66,6 @@ public/               # Static assets
 1. **User Onboarding**:
 
    - Users can authenticate with or without a traditional wallet
-   - Lit Protocol's PKP system provides a secure, wallet-less experience
 
 2. **Session Management**:
 
@@ -118,12 +112,7 @@ The platform combines Account Kit's smart account capabilities with Lit Protocol
    - Simplified user onboarding with social logins
    - Bundled transaction support
    - Gas sponsorship capabilities
-
-2. **Lit Protocol** provides:
-   - Programmable Key Pairs (PKPs) for secure authentication
    - Session signatures for persistent authentication
-   - Capacity credits for rate limiting
-   - Delegated signing capabilities
    - Wallet-less authentication options
 
 ### Authentication Flow
@@ -131,26 +120,24 @@ The platform combines Account Kit's smart account capabilities with Lit Protocol
 The authentication process follows these steps:
 
 1. User connects with Account Kit (social login, passkey, etc.)
-2. For SCA users, a PKP is minted via Lit Protocol
+2. For SCA users, a wallet address is minted via Account Kit
 3. Session signatures are obtained for persistent authentication
-4. The PKP acts as the cryptographic identity for Lit Protocol operations
-5. The Smart Account handles blockchain transactions
+4. The Smart Account handles blockchain transactions
 
 ### Technical Implementation
 
 The codebase implements this integration through:
 
 - **Smart Account Hook** (`useModularAccount`): Manages ModularAccountV2 instances from Account Kit
-- **PKP Minting** (`usePKPMint`): Creates and manages Programmable Key Pairs
-- **Session Management** (`useSessionSigs`): Handles authentication with Lit Protocol
+- **Session Management** (`useSessionSigs`): Handles authentication with Accoun Kit
 - **Unified Signer** (`useUnifiedSessionSigner`): Combines different authentication approaches
 
 ### Key Technical Challenges
 
 1. **Authentication Method Compatibility**:
 
-   - Smart Contract Accounts cannot directly sign messages in the ECDSA format required by Lit Protocol
-   - The solution uses EOA signatures for Lit authentication while leveraging SCA for transactions
+   - Smart Contract Accounts cannot directly sign messages in the ECDSA format.
+   - The solution uses EOA signatures for Account Kit authentication while leveraging SCA for transactions
 
 2. **Session Management**:
 
@@ -170,7 +157,6 @@ This integration enables CRTV4 to provide features like wallet-less authenticati
 - Node.js 18+ and yarn/npm
 - An Alchemy API key
 - A Livepeer API key
-- A Lit Protocol account (optional for development)
 
 ### Installation
 
@@ -215,7 +201,6 @@ This application can be deployed on Vercel or any other Next.js-compatible hosti
 
 ## 📚 Additional Resources
 
-- [Lit Protocol Documentation](https://developer.litprotocol.com/)
 - [Account Kit Documentation](https://accountkit.alchemy.com/)
 - [Livepeer Documentation](https://docs.livepeer.org/)
 - [Next.js Documentation](https://nextjs.org/docs)
