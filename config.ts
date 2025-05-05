@@ -52,7 +52,7 @@ const uiConfig: AlchemyAccountsUIConfig = {
       height: 80,
     }),
   },
-  supportUrl: "https://t.me/CreativeMuse_bot",
+  supportUrl: process.env.NEXT_PUBLIC_SUPPORT_URL,
 };
 
 // Create the Account Kit config
