@@ -1,13 +1,5 @@
 // components/Navbar.tsx
 "use client";
-import {
-  Sheet,
-  SheetTrigger,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "@/components/ui/sheet"; // Corrected import: relative to current file
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
@@ -16,7 +8,7 @@ import {
   SITE_NAME,
   SITE_ORG,
   SITE_PRODUCT,
-} from "@/lib/utils/context"; // Correct import path
+} from "@/context/context"; // Correct import path
 import { Button } from "@/components/ui/button"; // Corrected import
 import {
   Dialog,
@@ -24,18 +16,9 @@ import {
   useLogout,
   useUser,
   useChain,
+  useSmartAccountClient,
 } from "@account-kit/react";
-import { base, baseSepolia, optimism, polygon } from "viem/chains";
-import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import ThemeToggleComponent from "./ThemeToggle/toggleComponent";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { CheckIcon } from "@radix-ui/react-icons";
 import {
@@ -45,12 +28,27 @@ import {
   ArrowUpRight,
   ArrowUpDown,
   LogOut,
+  Wifi,
+  WifiOff,
+  Key,
 } from "lucide-react";
 import type { User as AccountUser } from "@account-kit/signer";
-import useModularAccount from "@/lib/hooks/useModularAccount";
+import useModularAccount from "@/lib/hooks/accountkit/useModularAccount";
 import { createPublicClient, http } from "viem";
-import { mainnet } from "viem/chains";
-import { LitProtocolStatus } from "./LitProtocolStatus";
+import {
+  alchemy,
+  mainnet,
+  base,
+  baseSepolia,
+  optimism,
+} from "@account-kit/infra";
+import { ArrowBigDown, ArrowBigUp } from "lucide-react";
+import WertButton from "./wallet/buy/fund-button";
+import { TokenBalance } from "./wallet/balance/TokenBalance";
+import type { Chain as ViemChain } from "viem/chains";
+import { AccountDropdown } from "@/components/account-dropdown/AccountDropdown";
+import { useMembershipVerification } from "@/lib/hooks/unlock/useMembershipVerification";
+import { MembershipSection } from "./account-dropdown/MembershipSection";
 
 type UseUserResult = (AccountUser & { type: "eoa" | "sca" }) | null;
 
@@ -66,10 +64,30 @@ const navLinkClass = `
   .replace(/\s+/g, " ")
   .trim();
 
+// Define reusable className for member-only nav links
+const memberNavLinkClass = `
+  group inline-flex h-9 w-max items-center justify-center rounded-md bg-white px-4 py-2 
+  text-sm font-medium transition-colors hover:bg-gray-100 hover:text-gray-900 
+  focus:bg-gray-100 focus:text-gray-900 focus:outline-none disabled:pointer-events-none 
+  disabled:opacity-50 data-[active]:bg-gray-100/50 data-[state=open]:bg-gray-100/50 
+  dark:bg-gray-950 dark:hover:bg-gray-800 dark:hover:text-gray-50 dark:focus:bg-gray-800 
+  dark:focus:text-gray-50 dark:data-[active]:bg-gray-800/50 dark:data-[state=open]:bg-gray-800/50
+  text-[#EC407A]
+`
+  .replace(/\s+/g, " ")
+  .trim();
+
 // Define reusable className for mobile menu links
 const mobileNavLinkClass = `
   flex w-full items-center rounded-md p-2 text-sm font-medium
   hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors
+`;
+
+// Define reusable className for mobile menu member-only links
+const mobileMemberNavLinkClass = `
+  flex w-full items-center rounded-md p-2 text-sm font-medium
+  hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors
+  text-[#EC406A]
 `;
 
 // Update the truncateAddress helper function
@@ -90,6 +108,66 @@ const truncateAddress = async (address: string, publicClient: any) => {
   }
 };
 
+// Add this near the top with other utility functions
+const getChainGradient = (chain: ViemChain) => {
+  switch (chain.id) {
+    case base.id:
+      return "from-[#0052FF] to-[#0052FF]";
+    case baseSepolia.id:
+      return "from-[#0052FF] to-[#0052FF]";
+    case optimism.id:
+      return "from-[#FF0420] to-[#FF0420]";
+    default:
+      return "from-gray-400 to-gray-600";
+  }
+};
+
+const getChainName = (chain: ViemChain) => {
+  switch (chain.id) {
+    case base.id:
+      return "Base";
+    case baseSepolia.id:
+      return "Base Sepolia";
+    case optimism.id:
+      return "Optimism";
+    default:
+      return chain.name;
+  }
+};
+
+// Add this near the top with other utility functions
+const getChainLogo = (chain: ViemChain) => {
+  switch (chain.id) {
+    case base.id:
+      return "/images/chains/base.svg";
+    case baseSepolia.id:
+      return "/images/chains/base-sepolia.svg";
+    case optimism.id:
+      return "/images/chains/optimism.svg";
+    default:
+      return "/images/chains/default-chain.svg";
+  }
+};
+
+const getChainTooltip = (chain: ViemChain) => {
+  return `Network: ${chain.name}
+Chain ID: ${chain.id}
+Native Currency: ${chain.nativeCurrency?.symbol || "ETH"}`;
+};
+
+// Add this component for the network status indicator
+function NetworkStatus({ isConnected }: { isConnected: boolean }) {
+  return (
+    <div className="flex items-center">
+      {isConnected ? (
+        <Wifi className="h-3 w-3 text-green-500" />
+      ) : (
+        <WifiOff className="h-3 w-3 text-red-500" />
+      )}
+    </div>
+  );
+}
+
 export default function Navbar() {
   const { openAuthModal } = useAuthModal();
   const user = useUser();
@@ -97,13 +175,18 @@ export default function Navbar() {
   const { chain: currentChain, setChain, isSettingChain } = useChain();
   const { account: modularAccount } = useModularAccount();
   const [displayAddress, setDisplayAddress] = useState<string>("");
+  const [isArrowUp, setIsArrowUp] = useState(true);
+  const { client: smartAccountClient } = useSmartAccountClient({});
+  const [isNetworkConnected, setIsNetworkConnected] = useState(true);
+  const [isSessionSigsModalOpen, setIsSessionSigsModalOpen] = useState(false);
+  const { isVerified, hasMembership } = useMembershipVerification();
 
   // Initialize Viem public client for ENS resolution
   const publicClient = createPublicClient({
     chain: mainnet,
-    transport: http(
-      `https://eth-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`
-    ),
+    transport: alchemy({
+      apiKey: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY as string,
+    }),
   });
 
   // Update display address when user changes
@@ -130,6 +213,7 @@ export default function Navbar() {
   useEffect(() => {
     console.log("Current Chain:", currentChain);
     console.log("Current Chain Name:", currentChain.name);
+    console.log("Current Chain ID:", currentChain.id);
     setCurrentChainName(currentChain?.name || "Unknown Chain");
   }, [currentChain]);
 
@@ -142,6 +226,33 @@ export default function Navbar() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Add network status check
+  useEffect(() => {
+    const checkNetworkStatus = async () => {
+      try {
+        if (user?.type === "eoa") {
+          setIsNetworkConnected(true);
+          return;
+        }
+        await smartAccountClient?.transport.request({
+          method: "eth_blockNumber",
+        });
+        setIsNetworkConnected(true);
+      } catch (error) {
+        setIsNetworkConnected(false);
+      }
+    };
+
+    const interval = setInterval(checkNetworkStatus, 10000);
+    checkNetworkStatus();
+
+    return () => clearInterval(interval);
+  }, [smartAccountClient, user?.type]);
+
+  useEffect(() => {
+    setCurrentChainName(getChainName(currentChain) || "Unknown Chain");
+  }, [currentChain]);
 
   const handleLinkClick = () => {
     setIsMenuOpen(false);
@@ -180,7 +291,6 @@ export default function Navbar() {
   const chainNames: Record<number, string> = {
     8453: "Base",
     10: "Optimism",
-    137: "Polygon",
     84532: "Base Sepolia",
   };
 
@@ -188,7 +298,6 @@ export default function Navbar() {
   const chainIcons: Record<number, string> = {
     8453: "/images/base.svg", // Replace with actual path to Base icon
     10: "/images/optimism.svg", // Replace with actual path to Optimism icon
-    137: "/images/polygon.svg", // Replace with actual path to Polygon icon
     84532: "/images/base-sepolia.svg", // Replace with actual path to Base Sepolia icon
   };
 
@@ -207,6 +316,7 @@ export default function Navbar() {
           <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
             <h2 className="text-xl font-bold mb-4">Buy Crypto</h2>
             <p className="mb-4">Purchase crypto directly to your wallet.</p>
+            <WertButton onClose={() => setIsDialogOpen(false)} />
             <div className="flex justify-end">
               <Button onClick={() => setIsDialogOpen(false)}>Close</Button>
             </div>
@@ -259,25 +369,16 @@ export default function Navbar() {
                 />
               </div>
               <div className="flex justify-center">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-6 w-6"
+                <button
+                  onClick={() => setIsArrowUp(!isArrowUp)}
+                  className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 >
-                  <path d="M7 10v12" />
-                  <path d="M15 10v12" />
-                  <path d="M11 14v8" />
-                  <path d="M11 2v8" />
-                  <path d="m3 6 4-4 4 4" />
-                  <path d="m17 6 4-4 4 4" />
-                </svg>
+                  {isArrowUp ? (
+                    <ArrowBigUp className="h-6 w-6" />
+                  ) : (
+                    <ArrowBigDown className="h-6 w-6" />
+                  )}
+                </button>
               </div>
               <div className="flex items-center gap-2">
                 <select className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600">
@@ -305,6 +406,38 @@ export default function Navbar() {
         );
       default:
         return null;
+    }
+  };
+
+  // Add this function to handle chain switching
+  const handleChainSwitch = async (
+    newChain: ViemChain,
+    chainName: string
+  ): Promise<void> => {
+    try {
+      // Check if already switching chains
+      if (isSettingChain) {
+        toast.warning("Chain switch already in progress");
+        return;
+      }
+
+      // Check if already on the selected chain
+      if (currentChain.id === newChain.id) {
+        toast.info(`Already connected to ${chainName}`);
+        return;
+      }
+
+      console.log("Switching to chain:", {
+        chainId: newChain.id,
+        chainName,
+      });
+
+      setChain({ chain: newChain });
+      toast.success(`Switched to ${chainName}`);
+      setCurrentChainName(chainName);
+    } catch (error) {
+      console.error("Error switching chain:", error);
+      toast.error(`Failed to switch to ${chainName}`);
     }
   };
 
@@ -343,9 +476,6 @@ export default function Navbar() {
             </Link>
 
             <nav className="hidden md:flex items-center ml-8 space-x-1">
-              <Link href="/" className={navLinkClass}>
-                Home
-              </Link>
               <Link href="/discover" className={navLinkClass}>
                 Discover
               </Link>
@@ -359,162 +489,29 @@ export default function Navbar() {
           </div>
 
           {/* Mobile menu button */}
-          <button
-            className={
-              "md:hidden inline-flex items-center justify-center rounded-md p-2 " +
-              "text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 " +
-              "dark:hover:bg-gray-800 dark:hover:text-gray-50 transition-colors"
-            }
-            onClick={() => {
-              setIsMenuOpen(!isMenuOpen);
-            }}
-            aria-expanded={isMenuOpen}
-          >
-            <span className="sr-only">Open main menu</span>
-            <MenuIcon className="h-6 w-6" />
-          </button>
+          <div className="flex md:hidden items-center">
+            <ThemeToggleComponent />
+            <button
+              className={
+                "ml-2 inline-flex items-center justify-center rounded-md p-2 " +
+                "text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 " +
+                "dark:hover:bg-gray-800 dark:hover:text-gray-50 transition-colors"
+              }
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              aria-expanded={isMenuOpen}
+            >
+              <span className="sr-only">Open main menu</span>
+              <MenuIcon className="h-6 w-6" />
+            </button>
+          </div>
 
-          <div className="flex items-center space-x-4">
+          {/* Desktop wallet display */}
+          <div className="hidden md:flex items-center space-x-4">
             <div className="flex items-center">
               <ThemeToggleComponent />
             </div>
             <div>
-              {user ? (
-                <div className="flex items-center gap-2">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="flex gap-2 items-center transition-all hover:bg-gray-100 
-                          dark:hover:bg-gray-800 hover:border-blue-500"
-                      >
-                        <div className="w-4 h-4 rounded-full bg-gradient-to-r from-blue-500 to-purple-500"></div>
-                        <span>
-                          {chainNames[currentChain.id] || currentChain.name}
-                        </span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="end"
-                      className="animate-in fade-in-80 slide-in-from-top-5"
-                    >
-                      <DropdownMenuLabel className="font-semibold text-sm text-gray-500 dark:text-gray-400">
-                        Switch Network
-                      </DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => setChain({ chain: base })}
-                        disabled={isSettingChain}
-                        className="flex items-center cursor-pointer hover:bg-gray-100 
-                          dark:hover:bg-gray-800 transition-colors"
-                      >
-                        <div className="w-4 h-4 mr-2 rounded-full bg-gradient-to-r from-blue-400 to-blue-600"></div>
-                        Base
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => setChain({ chain: optimism })}
-                        disabled={isSettingChain}
-                        className="flex items-center cursor-pointer hover:bg-gray-100 
-                          dark:hover:bg-gray-800 transition-colors"
-                      >
-                        <div className="w-4 h-4 mr-2 rounded-full bg-gradient-to-r from-red-400 to-red-600"></div>
-                        Optimism
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => setChain({ chain: baseSepolia })}
-                        disabled={isSettingChain}
-                        className="flex items-center cursor-pointer hover:bg-gray-100 
-                          dark:hover:bg-gray-800 transition-colors"
-                      >
-                        <div className="w-4 h-4 mr-2 rounded-full bg-gradient-to-r from-blue-300 to-purple-400"></div>
-                        Base Sepolia
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="flex items-center transition-all hover:bg-gray-100 
-                          dark:hover:bg-gray-800 hover:border-blue-500"
-                      >
-                        <div
-                          className="h-6 w-6 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 
-                          mr-2 flex items-center justify-center text-white"
-                        >
-                          <User className="h-4 w-4" />
-                        </div>
-                        <span className="max-w-[100px] truncate">
-                          {displayAddress || "Loading..."}
-                        </span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="end"
-                      className="w-56 animate-in fade-in-80 slide-in-from-top-5"
-                    >
-                      <DropdownMenuLabel
-                        className="flex items-center cursor-pointer hover:bg-gray-100 
-                          dark:hover:bg-gray-800 rounded px-2 py-1 transition-colors"
-                        onClick={copyToClipboard}
-                      >
-                        <span className="flex-1 font-mono text-sm">
-                          {displayAddress}
-                        </span>
-                        {copySuccess ? (
-                          <CheckIcon className="ml-2 h-4 w-4 text-green-500" />
-                        ) : (
-                          <Copy className="ml-2 h-4 w-4" />
-                        )}
-                      </DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <LitProtocolStatus />
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => handleActionClick("buy")}
-                        className="flex items-center cursor-pointer hover:bg-gray-100 
-                          dark:hover:bg-gray-800 transition-colors"
-                      >
-                        <Plus className="mr-2 h-4 w-4 text-green-500" /> Buy
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => handleActionClick("send")}
-                        className="flex items-center cursor-pointer hover:bg-gray-100 
-                          dark:hover:bg-gray-800 transition-colors"
-                      >
-                        <ArrowUpRight className="mr-2 h-4 w-4 text-blue-500" />{" "}
-                        Send
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => handleActionClick("swap")}
-                        className="flex items-center cursor-pointer hover:bg-gray-100 
-                          dark:hover:bg-gray-800 transition-colors"
-                      >
-                        <ArrowUpDown className="mr-2 h-4 w-4 text-purple-500" />{" "}
-                        Swap
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => logout()}
-                        className="flex items-center cursor-pointer hover:bg-gray-100 
-                          dark:hover:bg-gray-800 transition-colors"
-                      >
-                        <LogOut className="mr-2 h-4 w-4 text-red-500" /> Logout
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              ) : (
-                <Button
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 
-                    hover:from-blue-700 hover:to-purple-700 text-white 
-                    transition-all duration-300 hover:shadow-lg"
-                  onClick={() => openAuthModal()}
-                >
-                  Login
-                </Button>
-              )}
+              <AccountDropdown />
             </div>
           </div>
 
@@ -523,43 +520,168 @@ export default function Navbar() {
             <div
               className={
                 "fixed inset-0 top-16 z-50 grid h-[calc(100vh-4rem)] grid-flow-row " +
-                "auto-rows-max overflow-auto p-6 pb-32 shadow-md animate-in " +
-                "slide-in-from-top-5 md:hidden"
+                "auto-rows-max overflow-auto p-4 pb-32 shadow-md animate-in " +
+                "slide-in-from-top-5 md:hidden bg-white dark:bg-gray-900"
               }
             >
               <div
                 className={
-                  "relative z-20 grid gap-6 rounded-md bg-white dark:bg-gray-900 " +
-                  "p-4 text-popover-foreground shadow-md border border-gray-200 " +
-                  "dark:border-gray-800"
+                  "relative z-20 grid gap-4 rounded-md " +
+                  "text-popover-foreground"
                 }
               >
-                <Link
-                  href="/"
-                  className="flex items-center space-x-2 transition-transform duration-200 hover:scale-105"
-                  onClick={handleLinkClick}
-                >
-                  <Image
-                    src={SITE_LOGO}
-                    alt={SITE_NAME}
-                    width={30}
-                    height={30}
-                    priority
-                    style={{ width: "30px", height: "30px" }}
-                    className="rounded-md"
-                  />
-                  <span className="font-bold text-lg bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                    {chainNames[currentChain.id] || currentChain.name}
-                  </span>
-                </Link>
-                <nav className="grid grid-flow-row gap-2 auto-rows-max text-sm">
-                  <Link
-                    href="/"
-                    className={mobileNavLinkClass}
-                    onClick={handleLinkClick}
+                {/* User Account Section for Mobile */}
+                {user ? (
+                  <div className="space-y-4 border-b border-gray-200 dark:border-gray-700 pb-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <div
+                          className={`
+                            h-8 w-8 rounded-full flex items-center justify-center text-white
+                            bg-gradient-to-r from-blue-500 to-purple-500
+                          `}
+                        >
+                          <User className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">
+                            {displayAddress}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {getChainName(currentChain)}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={copyToClipboard}
+                        className="h-8 w-8 p-0"
+                      >
+                        {copySuccess ? (
+                          <CheckIcon className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+
+                    {/* Add TokenBalance here */}
+                    <div className="mt-4">
+                      <TokenBalance />
+                    </div>
+
+                    {/* Add Membership Section here */}
+                    <div className="mt-4">
+                      <MembershipSection />
+                    </div>
+
+                    {/* Add Chain Selector here */}
+                    <div className="mt-4">
+                      <p className="text-sm font-medium mb-2">Network</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[base, optimism, baseSepolia].map((chain) => (
+                          <Button
+                            key={chain.id}
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              handleChainSwitch(chain, getChainName(chain))
+                            }
+                            disabled={
+                              isSettingChain || currentChain.id === chain.id
+                            }
+                            className={`flex items-center justify-start space-x-2 ${
+                              currentChain.id === chain.id
+                                ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+                                : ""
+                            }`}
+                          >
+                            <Image
+                              src={getChainLogo(chain)}
+                              alt={chain.name}
+                              width={20}
+                              height={20}
+                              className="rounded-full"
+                            />
+                            <span className="text-xs">
+                              {getChainName(chain)}
+                            </span>
+                            {currentChain.id === chain.id && (
+                              <NetworkStatus isConnected={isNetworkConnected} />
+                            )}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          handleActionClick("buy");
+                          setIsMenuOpen(false);
+                        }}
+                        className="flex items-center justify-center"
+                      >
+                        <Plus className="mr-2 h-4 w-4 text-green-500" />
+                        Buy
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          handleActionClick("send");
+                          setIsMenuOpen(false);
+                        }}
+                        className="flex items-center justify-center"
+                      >
+                        <ArrowUpRight className="mr-2 h-4 w-4 text-blue-500" />
+                        Send
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          handleActionClick("swap");
+                          setIsMenuOpen(false);
+                        }}
+                        className="flex items-center justify-center"
+                      >
+                        <ArrowUpDown className="mr-2 h-4 w-4 text-purple-500" />
+                        Swap
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          logout();
+                          setIsMenuOpen(false);
+                        }}
+                        className="flex items-center justify-center text-red-500"
+                      >
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Logout
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 
+                      hover:from-blue-700 hover:to-purple-700 text-white 
+                      transition-all duration-300 hover:shadow-lg"
+                    onClick={() => {
+                      openAuthModal();
+                      setIsMenuOpen(false);
+                    }}
                   >
-                    Home
-                  </Link>
+                    Login
+                  </Button>
+                )}
+
+                {/* Navigation Links */}
+                <nav className="grid grid-flow-row gap-2 auto-rows-max text-sm">
                   <Link
                     href="/discover"
                     className={mobileNavLinkClass}

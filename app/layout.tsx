@@ -5,7 +5,10 @@ import { Inter } from "next/font/google";
 import { headers } from "next/headers";
 import "./globals.css";
 import { Providers } from "./providers";
-import Navbar from "@/components/Navbar"; 
+import Navbar from "@/components/Navbar";
+import { cn } from "@/lib/utils/utils";
+import { Toaster } from "@/components/ui/toaster";
+import Footer from "@/components/Footer";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -14,24 +17,32 @@ export const metadata: Metadata = {
   description: "The Way Content Should Be.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   // Persist state across pages
+  const headersList = headers();
   const initialState = cookieToInitialState(
     config,
-    headers().get("cookie") ?? undefined
+    headersList.get("cookie") ?? undefined
   );
 
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="en" suppressHydrationWarning>
+      <body
+        className={cn(
+          inter.className,
+          "min-h-screen bg-background antialiased"
+        )}
+      >
         <Providers initialState={initialState}>
           <Navbar />
           {children}
+          <Footer />
         </Providers>
+        <Toaster />
       </body>
     </html>
   );

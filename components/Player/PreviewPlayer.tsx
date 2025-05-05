@@ -9,9 +9,10 @@ import {
   EnterFullscreenIcon,
   ExitFullscreenIcon,
 } from "@livepeer/react/assets";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import "./Player.css";
 import { ViewsComponent } from "./ViewsComponent";
+import { useVideo } from "@/context/VideoContext";
 
 export const PreviewPlayer: React.FC<{ src: Src[]; title: string }> = ({
   src,
@@ -20,6 +21,11 @@ export const PreviewPlayer: React.FC<{ src: Src[]; title: string }> = ({
   const [controlsVisible, setControlsVisible] = useState(true);
   const fadeTimeoutRef = useRef<NodeJS.Timeout>();
   const containerRef = useRef<HTMLDivElement>(null);
+  const { currentPlayingId, setCurrentPlayingId } = useVideo();
+  const playerId = useRef(Math.random().toString(36).substring(7)).current;
+  const [isPlaying, setIsPlaying] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const isUnmountingRef = useRef(false);
 
   // Extract playback ID from the source
   const getPlaybackId = (sources: Src[]): string => {
@@ -59,14 +65,101 @@ export const PreviewPlayer: React.FC<{ src: Src[]; title: string }> = ({
     );
   };
 
+  const safelyPauseVideo = useCallback(async () => {
+    if (!videoRef.current || isUnmountingRef.current) return;
+
+    try {
+      if (!videoRef.current.paused) {
+        await videoRef.current.pause();
+      }
+    } catch (error) {
+      console.error("Error pausing video:", error);
+    }
+  }, []);
+
   useEffect(() => {
-    resetFadeTimeout();
+    const video = containerRef.current?.querySelector("video");
+    if (video) {
+      videoRef.current = video;
+
+      // Set initial volume and playback rate
+      video.volume = 0.5;
+      video.playbackRate = 1.0;
+    }
+
     return () => {
-      if (fadeTimeoutRef.current) {
-        clearTimeout(fadeTimeoutRef.current);
+      isUnmountingRef.current = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!videoRef.current) return;
+
+    const handlePlay = async () => {
+      if (isUnmountingRef.current) {
+        await safelyPauseVideo();
+        return;
+      }
+
+      setIsPlaying(true);
+      setCurrentPlayingId(playerId);
+    };
+
+    const handlePause = () => {
+      setIsPlaying(false);
+      if (currentPlayingId === playerId) {
+        setCurrentPlayingId("");
       }
     };
-  }, [src, title]);
+
+    const handleBeforeUnload = () => {
+      safelyPauseVideo();
+    };
+
+    videoRef.current.addEventListener("play", handlePlay);
+    videoRef.current.addEventListener("pause", handlePause);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      if (videoRef.current) {
+        videoRef.current.removeEventListener("play", handlePlay);
+        videoRef.current.removeEventListener("pause", handlePause);
+        safelyPauseVideo();
+      }
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      if (currentPlayingId === playerId) {
+        setCurrentPlayingId("");
+      }
+    };
+  }, [playerId, currentPlayingId, setCurrentPlayingId, safelyPauseVideo]);
+
+  useEffect(() => {
+    if (!videoRef.current) return;
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        safelyPauseVideo();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [safelyPauseVideo]);
+
+  useEffect(() => {
+    if (!videoRef.current) return;
+
+    if (
+      currentPlayingId &&
+      currentPlayingId !== playerId &&
+      !videoRef.current.paused
+    ) {
+      safelyPauseVideo();
+    }
+  }, [currentPlayingId, playerId, safelyPauseVideo]);
 
   const resetFadeTimeout = () => {
     if (fadeTimeoutRef.current) {
@@ -78,6 +171,19 @@ export const PreviewPlayer: React.FC<{ src: Src[]; title: string }> = ({
     }, 2000);
   };
 
+  const handleControlInteraction = useCallback(() => {
+    resetFadeTimeout();
+    if (videoRef.current) {
+      if (videoRef.current.paused) {
+        videoRef.current.play().catch((error) => {
+          console.error("Error playing video:", error);
+        });
+      } else {
+        videoRef.current.pause();
+      }
+    }
+  }, []);
+
   return (
     <div
       ref={containerRef}
@@ -86,13 +192,36 @@ export const PreviewPlayer: React.FC<{ src: Src[]; title: string }> = ({
       onMouseLeave={() => setControlsVisible(false)}
       onTouchStart={resetFadeTimeout}
     >
-      <Player.Root src={src} autoPlay={false} volume={0.5} aspectRatio={16 / 9}>
-        <Player.Container className="h-full w-full">
+      <Player.Root
+        src={src}
+        autoPlay={false}
+        volume={0.5}
+        aspectRatio={16 / 9}
+        onError={(error) => {
+          console.error("Player error:", error);
+        }}
+      >
+        <Player.Container className="relative h-full w-full">
           <Player.Video
-            className="h-full w-full"
+            className="absolute inset-0 h-full w-full object-cover"
             title={title}
             playsInline
             controls={false}
+            onCanPlay={() => {
+              if (videoRef.current) {
+                videoRef.current.volume = 0.5;
+              }
+            }}
+            onPlay={() => {
+              setIsPlaying(true);
+              setCurrentPlayingId(playerId);
+            }}
+            onPause={() => {
+              setIsPlaying(false);
+              if (currentPlayingId === playerId) {
+                setCurrentPlayingId("");
+              }
+            }}
           />
 
           <Player.LoadingIndicator className="absolute inset-0 flex items-center justify-center bg-black">
@@ -103,41 +232,63 @@ export const PreviewPlayer: React.FC<{ src: Src[]; title: string }> = ({
           </Player.LoadingIndicator>
 
           <div
-            className={
-              `absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/60` +
-              ` pointer-events-none transition-opacity duration-300 ${
-                controlsVisible ? "opacity-100" : "opacity-0"
-              }`
-            }
+            className={`pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 
+              via-transparent to-black/60 transition-opacity duration-300 
+              ${controlsVisible ? "opacity-100" : "opacity-0"}`}
           />
 
-          <div className="video-controls">
-            <div className="flex flex-col gap-4">
-              <Player.Seek className="w-full">
-                <Player.Track className="relative w-full h-1 bg-white/30 rounded-full">
-                  <Player.SeekBuffer className="absolute h-full bg-white/50 rounded-full" />
-                  <Player.Range className="absolute h-full bg-primary rounded-full" />
-                  <Player.Thumb className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-primary rounded-full" />
+          <div
+            className={`absolute inset-0 z-30 flex flex-col justify-between transition-opacity 
+              duration-300 ${controlsVisible ? "opacity-100" : "opacity-0"}`}
+          >
+            {/* Top controls bar */}
+            <div className="w-full bg-gradient-to-b from-black/80 to-transparent px-4 py-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium text-white line-clamp-1">
+                  {title}
+                </h3>
+                <ViewsComponent playbackId={getPlaybackId(src)} />
+              </div>
+            </div>
+
+            {/* Center play/pause button */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Player.PlayPauseTrigger
+                className={`group relative flex h-16 w-16 cursor-pointer items-center 
+                  justify-center rounded-full bg-black/50 hover:bg-black/70 
+                  transition-transform duration-200 hover:scale-110`}
+                onClick={handleControlInteraction}
+              >
+                <Player.PlayingIndicator asChild matcher={false}>
+                  <PlayIcon className="h-10 w-10 text-white" />
+                </Player.PlayingIndicator>
+                <Player.PlayingIndicator asChild>
+                  <PauseIcon className="h-10 w-10 text-white" />
+                </Player.PlayingIndicator>
+              </Player.PlayPauseTrigger>
+            </div>
+
+            {/* Bottom controls */}
+            <div className="w-full bg-gradient-to-t from-black/80 to-transparent px-4 pb-4 pt-20">
+              <Player.Seek className="group relative mb-4 flex h-1 w-full cursor-pointer items-center">
+                <Player.Track className="relative h-1 w-full rounded-full bg-white/30 group-hover:h-1.5 transition-all">
+                  <Player.SeekBuffer className="absolute h-full rounded-full bg-white/50" />
+                  <Player.Range className="absolute h-full rounded-full bg-white" />
+                  <Player.Thumb
+                    className={`absolute top-1/2 -translate-y-1/2 h-3 w-3 rounded-full bg-white opacity-0 
+                  group-hover:opacity-100 transition-opacity ${
+                    isPlaying ? "opacity-100" : "opacity-0"
+                  }`}
+                  />
                 </Player.Track>
               </Player.Seek>
 
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <Player.PlayPauseTrigger
-                    className="group relative flex h-10 w-10 items-center justify-center 
-                  rounded-full bg-white/10 hover:bg-white/20"
-                  >
-                    <Player.PlayingIndicator asChild matcher={false}>
-                      <PlayIcon className="h-5 w-5 text-white" />
-                    </Player.PlayingIndicator>
-                    <Player.PlayingIndicator asChild>
-                      <PauseIcon className="h-5 w-5 text-white" />
-                    </Player.PlayingIndicator>
-                  </Player.PlayPauseTrigger>
-
+                <div className="flex items-center gap-3">
                   <Player.MuteTrigger
-                    className="group relative flex h-10 w-10 items-center 
-                  justify-center rounded-full bg-white/10 hover:bg-white/20"
+                    className="group relative flex h-8 w-8 cursor-pointer items-center 
+                      justify-center rounded-full hover:bg-white/10"
+                    onClick={handleControlInteraction}
                   >
                     <Player.VolumeIndicator asChild matcher={false}>
                       <MuteIcon className="h-5 w-5 text-white" />
@@ -146,24 +297,20 @@ export const PreviewPlayer: React.FC<{ src: Src[]; title: string }> = ({
                       <UnmuteIcon className="h-5 w-5 text-white" />
                     </Player.VolumeIndicator>
                   </Player.MuteTrigger>
-
                   <Player.Time className="text-sm font-medium text-white" />
-                  <ViewsComponent playbackId={getPlaybackId(src)} />
                 </div>
 
-                <div className="flex items-center gap-4">
-                  <Player.FullscreenTrigger
-                    className="group relative flex h-10 w-10 items-center 
-                  justify-center rounded-full bg-white/10 hover:bg-white/20"
-                  >
-                    <Player.FullscreenIndicator asChild matcher={false}>
-                      <EnterFullscreenIcon className="h-5 w-5 text-white" />
-                    </Player.FullscreenIndicator>
-                    <Player.FullscreenIndicator asChild>
-                      <ExitFullscreenIcon className="h-5 w-5 text-white" />
-                    </Player.FullscreenIndicator>
-                  </Player.FullscreenTrigger>
-                </div>
+                <Player.FullscreenTrigger
+                  className="group relative flex h-8 w-8 cursor-pointer items-center 
+                    justify-center rounded-full hover:bg-white/10"
+                >
+                  <Player.FullscreenIndicator asChild matcher={false}>
+                    <EnterFullscreenIcon className="h-5 w-5 text-white" />
+                  </Player.FullscreenIndicator>
+                  <Player.FullscreenIndicator asChild>
+                    <ExitFullscreenIcon className="h-5 w-5 text-white" />
+                  </Player.FullscreenIndicator>
+                </Player.FullscreenTrigger>
               </div>
             </div>
           </div>

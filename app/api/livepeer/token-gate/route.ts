@@ -1,20 +1,10 @@
 "use server";
 
 import { NextRequest, NextResponse } from "next/server";
-import {
-  createPublicClient,
-  http,
-  Address,
-  getContract,
-  PublicClient,
-  parseAbiItem,
-} from "viem";
-import { base, baseSepolia, optimism, polygon, Chain } from "viem/chains";
-
-import {
-  generateAccessKey,
-  validateAccessKey,
-} from "../../../../lib/access-key";
+import { createPublicClient, Address } from "viem";
+import { alchemy, baseSepolia, base, optimism } from "@account-kit/infra";
+import type { Chain } from "viem";
+import { generateAccessKey, validateAccessKey } from "@/lib/access-key";
 import { getSmartAccountClient } from "@account-kit/core";
 import { config } from "@/config";
 
@@ -36,7 +26,6 @@ const erc1155ABI = [
 const chainMapping: Record<number, Chain> = {
   8453: base,
   10: optimism,
-  137: polygon,
   84532: baseSepolia,
 };
 
@@ -155,10 +144,13 @@ export async function GET(request: NextRequest) {
     }
 
     const accessKey = generateAccessKey(address, {
-      creatorAddress,
-      tokenId,
-      contractAddress,
-      chain,
+      type: "token-gate",
+      rules: {
+        chain,
+        contractAddress,
+        tokenId,
+        creatorAddress,
+      },
     });
 
     console.log({ accessKey });
@@ -210,11 +202,15 @@ async function validateAccess(payload: WebhookPayload): Promise<boolean> {
     if (!client || !client.address) return false;
 
     // Validate the access key
-    const isValidKey = await validateAccessKey(
-      accessKey,
-      client.address,
-      context
-    );
+    const isValidKey = validateAccessKey(accessKey, client.address, {
+      type: "token-gate",
+      rules: {
+        chain: context.chain,
+        contractAddress: context.contractAddress,
+        tokenId: context.tokenId,
+        creatorAddress: context.creatorAddress,
+      },
+    });
     if (!isValidKey) return false;
 
     // Check if user has required token balance
@@ -249,7 +245,9 @@ async function checkUserTokenBalances(
     // Get a public client for the chain
     const publicClient = createPublicClient({
       chain,
-      transport: http(),
+      transport: alchemy({
+        apiKey: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY as string,
+      }),
     });
 
     // Check the user token balance
