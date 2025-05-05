@@ -7,9 +7,9 @@ export default function Component() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="w-full bg-[#F7F7F7] py-2.5 border-t">
-      <div className="container mx-auto px-6">
-        <div className="flex items-center justify-between">
+    <footer className="w-full border-t bg-[#F7F7F7] dark:bg-gray-950 dark:border-gray-800 py-4 md:py-2.5">
+      <div className="container mx-auto px-4 md:px-6">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-0">
           {/* Logo */}
           <Link href="/" className="flex items-center" prefetch={false}>
             <Image
@@ -17,30 +17,40 @@ export default function Component() {
               alt="Creative Logo"
               width={20}
               height={20}
-              style={{ width: 20, height: "auto", maxHeight: 20 }}
-              className="object-contain"
+              className="object-contain w-5 h-5"
             />
-            <span
-              className="text-sm font-medium ml-2"
+            <h1
+              className="text-md ml-2 dark:text-white text-gray-900"
               style={{ fontFamily: "ConthraxSb-Regular , sans-serif" }}
             >
               CREATIVE
-            </span>
+            </h1>
           </Link>
 
-          <div className="flex items-center">
+          <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4">
             <Link
               href="https://app.creativeplatform.xyz"
-              className="flex items-center text-[13px] text-gray-600 hover:text-red-600 transition-colors duration-300 ease-in-out mr-4 group"
+              className="flex items-center text-[13px] text-gray-600 dark:text-gray-300 \
+                hover:text-red-600 dark:hover:text-red-400 focus-visible:text-red-600 dark:focus-visible:text-red-400 \
+                transition-colors duration-300 ease-in-out group"
               prefetch={false}
             >
-              <PowerIcon className="h-[18px] w-[18px] mr-1 group-hover:stroke-red-600 transition-colors duration-300 ease-in-out" />
+              <PowerIcon
+                className="h-[18px] w-[18px] mr-1 group-hover:stroke-red-600 \
+                  dark:group-hover:stroke-red-400 transition-colors duration-300 ease-in-out"
+              />
               Exit dApp
             </Link>
 
-            <p className="text-xs text-gray-500">
+            <Link
+              href="https://creativeplatform.xyz"
+              prefetch={false}
+              className="text-xs text-gray-500 dark:text-gray-400 text-center md:text-left \
+                hover:text-red-600 dark:hover:text-red-400 focus-visible:text-red-600 dark:focus-visible:text-red-400 \
+                transition-colors duration-300 ease-in-out"
+            >
               © {currentYear} Creative Organization DAO. All rights reserved.
-            </p>
+            </Link>
           </div>
         </div>
       </div>
