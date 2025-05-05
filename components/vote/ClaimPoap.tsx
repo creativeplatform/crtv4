@@ -96,13 +96,13 @@ const ClaimPoap = ({ address, proposalId, snapshot }: Props) => {
         />
       </div>
       <div className="mt-5">
-        {currentState !== NO_POAP ? (
-          <Button disabled>No Claim</Button>
-        ) : LOADING || loadButton ? (
-          <Button disabled>Loading...</Button>
-        ) : (
+        {currentState === "NO_POAP" ? null : loadButton ||
+          (currentState as string) === "LOADING" ? (
+          <Button disabled>Minting...</Button>
+        ) : ["UNCLAIMED", "CLAIMED"].includes(currentState) &&
+          STATES[currentState].buttonText ? (
           <Button onClick={action}>{STATES[currentState].buttonText}</Button>
-        )}
+        ) : null}
       </div>
     </div>
   );
