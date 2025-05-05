@@ -99,7 +99,7 @@ type State =
 type States = { [S in State]: Record<string, any> };
 export const STATES: States = {
   NO_POAP: {
-    header: "A POAP hasn't been setup for this proposal yet :'(",
+    header: "A POAP hasn't been setup for this proposal yet 😢",
     headerImage: "https://snapshotsplugin.s3.us-west-2.amazonaws.com/empty.svg",
     mainImage:
       "https://snapshotsplugin.s3.us-west-2.amazonaws.com/placeholder.png",
