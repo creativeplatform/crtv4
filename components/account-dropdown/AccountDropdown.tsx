@@ -61,6 +61,7 @@ import {
   RadioTower,
   Bot,
   ShieldUser,
+  Plus,
 } from "lucide-react";
 import { CheckIcon } from "@radix-ui/react-icons";
 import Image from "next/image";
@@ -899,28 +900,6 @@ export function AccountDropdown() {
 
           <DropdownMenuSeparator />
 
-          {/* Action Buttons */}
-          <div className="px-2 py-2 space-y-2">
-            <DropdownMenuItem
-              onClick={() => handleActionClick("buy")}
-              className="w-full flex items-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors p-3 md:p-2"
-            >
-              <Wallet className="mr-2 h-4 w-4 text-green-500" /> Buy
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => handleActionClick("send")}
-              className="w-full flex items-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors p-3 md:p-2"
-            >
-              <Send className="mr-2 h-4 w-4 text-blue-500" /> Send
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => handleActionClick("swap")}
-              className="w-full flex items-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors p-3 md:p-2"
-            >
-              <ArrowUpDown className="mr-2 h-4 w-4 text-purple-500" /> Swap
-            </DropdownMenuItem>
-          </div>
-
           {/* Member Access Links */}
           {isVerified && hasMembership && (
             <>
@@ -971,6 +950,18 @@ export function AccountDropdown() {
                       dark:hover:bg-gray-800 transition-colors p-3 md:p-2"
                       >
                         <ShieldUser className="mr-2 h-4 w-4" /> Profile
+                      </DropdownMenuItem>
+                    </Link>
+                    {/* Create Proposal Link */}
+                    <Link href="/vote/create" passHref legacyBehavior>
+                      <DropdownMenuItem
+                        className="w-full flex items-center cursor-pointer hover:bg-green-50 \
+                          dark:hover:bg-green-900 transition-colors p-3 md:p-2 text-green-600 \
+                          dark:text-green-400 font-semibold border-t border-gray-200 \
+                          dark:border-gray-700 mt-2"
+                      >
+                        <Plus className="mr-2 h-4 w-4 text-green-500" /> Create
+                        Proposal
                       </DropdownMenuItem>
                     </Link>
                   </>

@@ -9,6 +9,9 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Slash } from "lucide-react";
 import { ProposalList } from "@/components/proposal-list/ProposalList";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { ProposalListSkeleton } from "@/components/proposal-list/ProposalListSkeleton";
 // import Vote from "@/components/Voting/Index";
 
 export default function VotePage() {
@@ -43,9 +46,11 @@ export default function VotePage() {
         <p>Have your say in the future of the Creative ecosystem.</p>
       </div>
       <div className="p-4">
-        <Suspense fallback={<div>Loading proposals...</div>}>
-          <ProposalList space="vote.thecreative.eth" />
-        </Suspense>
+        <div className="grid gap-4 w-full max-w-full">
+          <Suspense fallback={<ProposalListSkeleton />}>
+            <ProposalList space="vote.thecreative.eth" />
+          </Suspense>
+        </div>
       </div>
     </div>
   );
