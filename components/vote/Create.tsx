@@ -37,9 +37,7 @@ function getUnixTimestamp(date: string, time: string) {
   if (!date || !time) return 0;
   const [year, month, day] = date.split("-").map(Number);
   const [hour, minute] = time.split(":").map(Number);
-  return Math.floor(
-    new Date(year, month - 1, day, hour, minute).getTime() / 1000
-  );
+  return Math.floor(Date.UTC(year, month - 1, day, hour, minute) / 1000);
 }
 
 function Create() {

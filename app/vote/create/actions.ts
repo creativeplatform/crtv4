@@ -93,6 +93,7 @@ export const createProposal = actionClient
         id: string;
       }>;
     } catch (error) {
+      console.error("Error creating proposal:", error);
       return {
         success: false,
         error: (error as Error).message || "Failed to create proposal",
