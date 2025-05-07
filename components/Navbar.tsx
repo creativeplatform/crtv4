@@ -31,6 +31,10 @@ import {
   Wifi,
   WifiOff,
   Key,
+  CloudUpload,
+  RadioTower,
+  Bot,
+  ShieldUser,
 } from "lucide-react";
 import type { User as AccountUser } from "@account-kit/signer";
 import useModularAccount from "@/lib/hooks/accountkit/useModularAccount";
@@ -703,6 +707,56 @@ export default function Navbar() {
                   >
                     Vote
                   </Link>
+                  {/* Member Access Links (mobile) */}
+                  {isVerified && hasMembership && (
+                    <>
+                      <div className="mt-4 mb-1 text-xs text-muted-foreground font-semibold">
+                        Member Access
+                      </div>
+                      <Link
+                        href="/upload"
+                        className={mobileMemberNavLinkClass}
+                        onClick={handleLinkClick}
+                      >
+                        <CloudUpload className="mr-2 h-4 w-4" /> Upload
+                      </Link>
+                      <Link
+                        href="/live"
+                        className={mobileMemberNavLinkClass}
+                        onClick={handleLinkClick}
+                      >
+                        <RadioTower className="mr-2 h-4 w-4" /> Live
+                      </Link>
+                      <Link
+                        href="/clips"
+                        className={mobileMemberNavLinkClass}
+                        onClick={handleLinkClick}
+                      >
+                        <Bot className="mr-2 h-4 w-4" /> Daydream
+                        <span className="ml-2 px-2 py-0.5 rounded bg-muted-foreground/10 text-xs text-muted-foreground">
+                          Beta
+                        </span>
+                      </Link>
+                      <Link
+                        href="/profile"
+                        className={mobileMemberNavLinkClass}
+                        onClick={handleLinkClick}
+                      >
+                        <ShieldUser className="mr-2 h-4 w-4" /> Profile
+                      </Link>
+                      <Link
+                        href="/vote/create"
+                        className={
+                          mobileMemberNavLinkClass +
+                          " text-green-600 font-semibold border-t border-gray-200 dark:border-gray-700 mt-2"
+                        }
+                        onClick={handleLinkClick}
+                      >
+                        <Plus className="mr-2 h-4 w-4 text-green-500" /> Create
+                        Proposal
+                      </Link>
+                    </>
+                  )}
                 </nav>
               </div>
             </div>
