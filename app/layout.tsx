@@ -37,7 +37,8 @@ export default async function RootLayout({
           "min-h-screen bg-background antialiased"
         )}
       >
-        <div id="alchemy-signer-iframe-container" style={{ display: "none" }} />
+        <div id="alchemy-signer-iframe-container" style={{ display: "none" }} />{" "}
+        {/* Alchemy signer iframe container for modular account functionality */}
         <Providers initialState={initialState}>
           <Navbar />
           {children}

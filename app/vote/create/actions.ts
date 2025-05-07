@@ -1,6 +1,9 @@
 import { createSafeActionClient } from "next-safe-action";
 import { z } from "zod";
-import { client as snapshotClient } from "@/lib/sdk/snapshot/snapshot-client";
+import {
+  client,
+  client as snapshotClient,
+} from "@/lib/sdk/snapshot/snapshot-client";
 import type { ActionResponse } from "@/lib/types/actions";
 import { createModularAccountClient } from "@/lib/sdk/accountKit/modularAccountClient";
 import { base } from "@account-kit/infra"; // or your target chain
@@ -72,7 +75,12 @@ export const createProposal = actionClient
         end,
         snapshot: block,
         discussion: "",
-        plugins: JSON.stringify({ poap: {} }),
+        plugins: JSON.stringify({
+          poap: {
+            address: "0x0000000000000000000000000000000000000000",
+            tokenId: "1",
+          },
+        }),
       };
       const result = await submitSnapshotProposal({
         signer: snapshotSigner,
@@ -85,6 +93,7 @@ export const createProposal = actionClient
         id: string;
       }>;
     } catch (error) {
+      console.error("Error creating proposal:", error);
       return {
         success: false,
         error: (error as Error).message || "Failed to create proposal",
