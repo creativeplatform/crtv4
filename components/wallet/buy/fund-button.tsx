@@ -39,6 +39,9 @@ const WertButton: React.FC<WertButtonProps> = ({ onClose }) => {
   return (
     <Button
       onClick={() => {
+        // Remove existing Wert iframe if present to prevent duplicate errors
+        const existingIframe = document.getElementById("turnkey-iframe");
+        if (existingIframe) existingIframe.remove();
         open({ options });
       }}
     >
