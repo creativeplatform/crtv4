@@ -7,7 +7,6 @@ import { base } from "@account-kit/infra"; // or your target chain
 import { signer } from "@/lib/sdk/accountKit/signer";
 import { stringToHex } from "viem";
 import { submitSnapshotProposal } from "@/lib/sdk/snapshot/snapshot-proposal-wrapper";
-import { unlockService } from "@/lib/sdk/unlock/services";
 
 const actionClient = createSafeActionClient();
 
@@ -42,15 +41,6 @@ export const createProposal = actionClient
       return {
         success: false,
         error: "Wallet address required",
-      } as ActionResponse;
-
-    // Server-side membership check
-    const memberships = await unlockService.getAllMemberships(address);
-    const hasMembership = memberships.some((m) => m.isValid);
-    if (!hasMembership)
-      return {
-        success: false,
-        error: "Unauthorized: Valid membership required to create a proposal.",
       } as ActionResponse;
 
     if (end <= start)
