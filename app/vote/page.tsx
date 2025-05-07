@@ -46,9 +46,11 @@ export default function VotePage() {
         <p>Have your say in the future of the Creative ecosystem.</p>
       </div>
       <div className="p-4">
-        <Suspense fallback={<ProposalListSkeleton />}>
-          <ProposalList space="vote.thecreative.eth" />
-        </Suspense>
+        <div className="grid gap-4 w-full max-w-full">
+          <Suspense fallback={<ProposalListSkeleton />}>
+            <ProposalList space="vote.thecreative.eth" />
+          </Suspense>
+        </div>
       </div>
     </div>
   );

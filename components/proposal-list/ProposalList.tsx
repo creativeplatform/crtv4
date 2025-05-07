@@ -38,7 +38,7 @@ function ProposalList({ space }: ProposalListProps) {
     <div className="grid gap-4">
       {data.proposals.map((proposal) => (
         <Link key={proposal.id} href={`/vote/${proposal.id}`} className="block">
-          <Card className="p-4 cursor-pointer hover:shadow-lg transition-shadow">
+          <Card className="p-2 sm:p-4 w-full max-w-full cursor-pointer hover:shadow-lg transition-shadow">
             <h2 className="text-lg font-semibold mb-1">{proposal.title}</h2>
             <p className="text-sm text-gray-500 mb-2">
               {proposal.body.slice(0, 120)}
