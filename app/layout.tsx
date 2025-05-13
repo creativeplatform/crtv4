@@ -21,11 +21,11 @@ export const metadata: Metadata = {
     description: "The Way Content Should Be.",
     images: [
       {
-        url: "https://tv.creativeplatform.xyz/logo-tv.gif",
+        url: "https://tv.creativeplatform.xyz/Creative_TV_Logo.png",
         width: 500,
         height: 500,
-        alt: "Creative TV Animated Logo",
-        type: "image/gif",
+        alt: "Creative TV Logo",
+        type: "image/png",
       },
     ],
   },
