@@ -5,21 +5,29 @@ import {
 } from "@/app/api/livepeer/assetUploadActions";
 import { Player } from "@/components/Player/Player";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
 import { Src } from "@livepeer/react";
 import { getSrc } from "@livepeer/react/external";
 import { Asset, PlaybackInfo } from "livepeer/models/components";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useInterval } from "@/lib/hooks/useInterval";
-import { useUser } from "@account-kit/react";
 import CreateThumbnailForm from "./CreateThumbnailForm";
 import { toast } from "sonner";
+import { NFTConfig } from "@/lib/types/video-asset";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type CreateThumbnailProps = {
   livePeerAssetId: string | undefined;
   thumbnailUri?: string;
-  onComplete: (data: { thumbnailUri: string }) => void;
+  onComplete: (data: {
+    thumbnailUri: string;
+    nftConfig?: {
+      isMintable: boolean;
+      maxSupply: number;
+      price: number;
+      royaltyPercentage: number;
+    };
+  }) => void;
 };
 
 export default function CreateThumbnail({
@@ -28,13 +36,11 @@ export default function CreateThumbnail({
   onComplete,
 }: CreateThumbnailProps) {
   const router = useRouter();
-  const user = useUser();
-
-  const [progress, setProgress] = useState<number>(0);
   const [livepeerAssetData, setLivepeerAssetData] = useState<Asset>();
   const [livepeerPlaybackData, setLivepeerPlaybackData] =
     useState<PlaybackInfo>();
   const [selectedThumbnail, setSelectedThumbnail] = useState<string>();
+  const [nftConfig, setNFTConfig] = useState<NFTConfig | undefined>(undefined);
 
   useInterval(
     () => {
@@ -76,9 +82,13 @@ export default function CreateThumbnail({
     router.back();
   };
 
-  const handleComplete = (thumbnailUri: string) => {
+  const handleComplete = (thumbnailUri: string, nftConfig?: NFTConfig) => {
     if (livepeerAssetData) {
       setSelectedThumbnail(thumbnailUri);
+      onComplete({
+        thumbnailUri: selectedThumbnail as string,
+        nftConfig: nftConfig,
+      });
     } else {
       toast.error("Video data not found. Please try again.");
     }
@@ -86,7 +96,10 @@ export default function CreateThumbnail({
 
   const handleSubmit = () => {
     if (selectedThumbnail) {
-      onComplete({ thumbnailUri: selectedThumbnail });
+      onComplete({
+        thumbnailUri: selectedThumbnail,
+        nftConfig: nftConfig,
+      });
     }
   };
 
@@ -101,8 +114,8 @@ export default function CreateThumbnail({
         </h3>
       </div>
       {livepeerAssetData?.status?.phase !== "ready" && (
-        <div className="my-4">
-          <Loader2 className="mx-auto h-5 w-5 animate-pulse" />
+        <div className="my-6">
+          <Skeleton className="w-full aspect-video rounded-lg" />
         </div>
       )}
       {livepeerAssetData?.status?.phase === "ready" && livepeerPlaybackData && (

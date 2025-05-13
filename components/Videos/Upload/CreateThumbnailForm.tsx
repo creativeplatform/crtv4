@@ -18,10 +18,19 @@ import { getLivepeerAiGeneratedImages } from "@/app/api/livepeer/livepeerAiActio
 import { Media } from "livepeer/models/components";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
 
 interface FormValues {
   aiModel: string;
   prompt: string;
+  nftConfig: {
+    isMintable: boolean;
+    maxSupply: number;
+    price: number;
+    royaltyPercentage: number;
+  };
+  selectedImage: string;
 }
 
 type CreateThumbnailFormProps = {
@@ -34,12 +43,21 @@ const CreateThumbnailForm = ({
   const {
     handleSubmit,
     control,
+    watch,
     formState: { errors, isSubmitting },
     setError,
+    setValue,
   } = useForm<FormValues>({
     defaultValues: {
       aiModel: "SG161222/RealVisXL_V4.0_Lightning",
       prompt: "",
+      nftConfig: {
+        isMintable: false,
+        maxSupply: 1,
+        price: 0,
+        royaltyPercentage: 5,
+      },
+      selectedImage: "",
     },
   });
 
@@ -48,6 +66,8 @@ const CreateThumbnailForm = ({
     undefined
   );
   const [loading, setLoading] = useState<boolean>(false);
+
+  const isMintable = watch("nftConfig.isMintable");
 
   const onSubmit = async (data: FormValues) => {
     setLoading(true);
@@ -64,14 +84,25 @@ const CreateThumbnailForm = ({
           ...response.result.images,
         ]);
       } else {
-        throw new Error(response.result);
+        const errorMsg =
+          typeof response.result === "string"
+            ? response.result
+            : JSON.stringify(response.result);
+        setError("root", {
+          message: errorMsg || "Error generating AI images",
+        });
+        return;
       }
     } catch (err) {
-      console.log("Error", JSON.stringify(err));
+      const errorMsg =
+        err instanceof Error
+          ? err.message
+          : typeof err === "string"
+          ? err
+          : JSON.stringify(err);
       setError("root", {
-        message: "Error generating AI images",
+        message: errorMsg || "Error generating AI images",
       });
-      throw err;
     } finally {
       setLoading(false);
     }
@@ -85,6 +116,8 @@ const CreateThumbnailForm = ({
     setSelectedImage(value);
     onSelectThumbnailImages(value);
   };
+
+  const radioValue = watch("selectedImage") ?? "";
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -150,6 +183,101 @@ const CreateThumbnailForm = ({
       />
       {errors.prompt && <p className="text-red-500">{errors.prompt.message}</p>}
 
+      <div className="mt-8 space-y-4 border-t pt-4">
+        <h3 className="text-lg font-semibold">NFT Configuration</h3>
+
+        <div className="flex items-center space-x-2">
+          <Controller
+            name="nftConfig.isMintable"
+            control={control}
+            render={({ field }) => (
+              <Switch checked={field.value} onCheckedChange={field.onChange} />
+            )}
+          />
+          <Label>Enable NFT Minting</Label>
+        </div>
+
+        {isMintable && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Max Supply</Label>
+                <Controller
+                  name="nftConfig.maxSupply"
+                  control={control}
+                  rules={{
+                    required: "Max supply is required",
+                    min: { value: 1, message: "Minimum supply is 1" },
+                  }}
+                  render={({ field }) => (
+                    <Input
+                      type="number"
+                      {...field}
+                      onChange={(e) => field.onChange(Number(e.target.value))}
+                    />
+                  )}
+                />
+                {errors.nftConfig?.maxSupply && (
+                  <p className="text-sm text-red-500">
+                    {errors.nftConfig.maxSupply.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Price (ETH)</Label>
+                <Controller
+                  name="nftConfig.price"
+                  control={control}
+                  rules={{
+                    required: "Price is required",
+                    min: { value: 0, message: "Price must be 0 or greater" },
+                  }}
+                  render={({ field }) => (
+                    <Input
+                      type="number"
+                      step="0.001"
+                      {...field}
+                      onChange={(e) => field.onChange(Number(e.target.value))}
+                    />
+                  )}
+                />
+                {errors.nftConfig?.price && (
+                  <p className="text-sm text-red-500">
+                    {errors.nftConfig.price.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Royalty Percentage</Label>
+              <Controller
+                name="nftConfig.royaltyPercentage"
+                control={control}
+                rules={{
+                  required: "Royalty percentage is required",
+                  min: { value: 0, message: "Minimum royalty is 0%" },
+                  max: { value: 100, message: "Maximum royalty is 100%" },
+                }}
+                render={({ field }) => (
+                  <Input
+                    type="number"
+                    {...field}
+                    onChange={(e) => field.onChange(Number(e.target.value))}
+                  />
+                )}
+              />
+              {errors.nftConfig?.royaltyPercentage && (
+                <p className="text-sm text-red-500">
+                  {errors.nftConfig.royaltyPercentage.message}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
       <Button type="submit" disabled={isSubmitting}>
         <SparklesIcon className="mr-1 h-4 w-4" />
         {isSubmitting ? "Generating..." : "Generate"}
@@ -168,8 +296,11 @@ const CreateThumbnailForm = ({
         </div>
       ) : (
         <RadioGroup
-          onValueChange={handleSelectionChange}
-          value={selectedImage}
+          value={radioValue}
+          onValueChange={(value) => {
+            setValue("selectedImage", value);
+            handleSelectionChange(value);
+          }}
           className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4"
         >
           {imagesUrl.length === 0 && (

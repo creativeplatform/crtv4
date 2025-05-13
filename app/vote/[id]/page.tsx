@@ -3,9 +3,11 @@ import { notFound } from "next/navigation";
 import { gql } from "@apollo/client";
 import { makeServerClient } from "@/lib/apollo-server-client";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { Proposal } from "@/components/proposal-list/ProposalList";
 import { VotingForm } from "@/components/proposal-list/ProposalList";
 import ClaimPoap from "@/components/vote/ClaimPoap";
+import { shortenAddress } from "@/lib/utils/utils";
 
 const GET_PROPOSAL = gql`
   query Proposal($id: String!) {
@@ -49,21 +51,69 @@ export default async function ProposalDetailsPage({
   const isVotingActive = now >= proposal.start && now <= proposal.end;
 
   return (
-    <Suspense fallback={<div>Loading proposal...</div>}>
+    <Suspense
+      fallback={
+        <div className="min-h-screen p-6 flex flex-col items-center">
+          <div className="w-full max-w-3xl">
+            <Card className="p-6 mb-6">
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-3/4" />
+                <div className="flex flex-wrap gap-2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-4 w-20" />
+                </div>
+                <div className="space-y-2 mt-4">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                </div>
+                <Skeleton className="h-4 w-1/2 mt-4" />
+              </div>
+            </Card>
+            <Card className="p-6 mb-6">
+              <Skeleton className="h-6 w-24 mb-4" />
+              <Skeleton className="h-32 w-full" />
+            </Card>
+            <Card className="p-6 mb-6">
+              <Skeleton className="h-6 w-32 mb-4" />
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-12" />
+                  </div>
+                  <Skeleton className="h-2 w-full" />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-12" />
+                  </div>
+                  <Skeleton className="h-2 w-full" />
+                </div>
+              </div>
+            </Card>
+          </div>
+        </div>
+      }
+    >
       <div className="min-h-screen p-6 flex flex-col items-center">
         <div className="w-full max-w-3xl">
-          <Card className="p-6 mb-6">
-            <h1 className="text-2xl font-bold mb-2">{proposal.title}</h1>
-            <div className="mb-4 text-gray-500">
-              <span>By: {proposal.author}</span>
-              <span className="mx-2">|</span>
-              <span>
+          <Card className="p-6 mb-6 overflow-x-auto">
+            <h1 className="text-2xl font-bold mb-2 break-words">
+              {proposal.title}
+            </h1>
+            <div className="mb-4 text-gray-500 space-y-1 break-all">
+              <div className="truncate max-w-full">
+                By: {shortenAddress(proposal.author)}
+              </div>
+              <div>
                 Start: {new Date(proposal.start * 1000).toLocaleString()}
-              </span>
-              <span className="mx-2">|</span>
-              <span>End: {new Date(proposal.end * 1000).toLocaleString()}</span>
-              <span className="mx-2">|</span>
-              <span>State: {proposal.state}</span>
+              </div>
+              <div>End: {new Date(proposal.end * 1000).toLocaleString()}</div>
+              <div>State: {proposal.state}</div>
             </div>
             <div className="mb-6 whitespace-pre-line break-words">
               {proposal.body}

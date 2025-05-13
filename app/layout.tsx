@@ -41,8 +41,10 @@ export default async function RootLayout({
         {/* Alchemy signer iframe container for modular account functionality */}
         <Providers initialState={initialState}>
           <Navbar />
-          {children}
-          <Footer />
+          <div className="min-h-screen flex flex-col">
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </div>
         </Providers>
         <Toaster />
       </body>

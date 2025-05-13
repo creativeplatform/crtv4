@@ -10,6 +10,8 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Slash } from "lucide-react";
+// import { ViewsComponent } from "@/components/Player/ViewsComponent";
+import VideoViewMetrics from "@/components/Videos/VideoViewMetrics";
 
 type VideoDetailsPageProps = {
   params: {
@@ -73,6 +75,13 @@ export default async function VideoDetailsPage({
       </div>
       <div className="py-10">
         <VideoDetails asset={assetData} />
+        {/* Metrics components */}
+        {assetData.playbackId && (
+          <div className="flex gap-4 items-center mb-6">
+            {/* <ViewsComponent playbackId={assetData.playbackId} /> */}
+            <VideoViewMetrics playbackId={assetData.playbackId} />
+          </div>
+        )}
       </div>
     </div>
   );

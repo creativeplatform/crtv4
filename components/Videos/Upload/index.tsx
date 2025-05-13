@@ -23,6 +23,13 @@ import {
 } from "@/lib/sdk/orbisDB/models/AssetMetadata";
 import { stack } from "@/lib/sdk/stack/stackClient";
 import { db } from "@/lib/sdk/orbisDB/client";
+import {
+  updateVideoAssetMintingStatus,
+  updateVideoAsset,
+} from "@/services/video-assets";
+import { createVideoAsset } from "@/services/video-assets";
+import type { VideoAsset } from "@/lib/types/video-asset";
+import { useUniversalAccount } from "@/lib/hooks/accountkit/useUniversalAccount";
 
 const HookMultiStepForm = () => {
   const [activeStep, setActiveStep] = useState(1);
@@ -36,12 +43,11 @@ const HookMultiStepForm = () => {
   const [livepeerAsset, setLivepeerAsset] = useState<Asset>();
   const [subtitlesUri, setSubtitlesUri] = useState<string>();
   const [thumbnailUri, setThumbnailUri] = useState<string>();
-
+  const [dbAssetId, setDbAssetId] = useState<number | null>(null);
+  const [videoAsset, setVideoAsset] = useState<VideoAsset | null>(null);
   const { isConnected } = useOrbisContext();
 
-  const { address } = useAccount({
-    type: "ModularAccountV2",
-  });
+  const { address, type, loading } = useUniversalAccount();
 
   const router = useRouter();
 
@@ -94,7 +100,35 @@ const HookMultiStepForm = () => {
           }
           onPressNext={(livepeerAsset: any) => {
             setLivepeerAsset(livepeerAsset);
-            setActiveStep((prevActiveStep) => prevActiveStep + 1);
+            // Create the video asset in the database and store its ID
+            createVideoAsset({
+              title: metadata?.title || "",
+              asset_id: livepeerAsset.id,
+              category: metadata?.category || "",
+              location: metadata?.location || "",
+              playback_id: livepeerAsset.playbackId || "",
+              description: metadata?.description || "",
+              creator_id: address || "",
+              status: "draft",
+              thumbnailUri: "",
+              duration: livepeerAsset.duration || null,
+              views_count: 0,
+              likes_count: 0,
+              is_minted: false,
+              token_id: null,
+              contract_address: null,
+              minted_at: null,
+              mint_transaction_hash: null,
+              royalty_percentage: null,
+              price: null,
+              max_supply: null,
+              current_supply: 0,
+              metadata_uri: null,
+              attributes: null,
+            }).then((dbAsset) => {
+              setVideoAsset(dbAsset as VideoAsset);
+              setActiveStep((prevActiveStep) => prevActiveStep + 1);
+            });
           }}
         />
       </div>
@@ -102,7 +136,15 @@ const HookMultiStepForm = () => {
         <CreateThumbnailWrapper
           livePeerAssetId={livepeerAsset?.id}
           thumbnailUri={thumbnailUri}
-          onComplete={async (data: { thumbnailUri: string }) => {
+          onComplete={async (data: {
+            thumbnailUri: string;
+            nftConfig?: {
+              isMintable: boolean;
+              maxSupply: number;
+              price: number;
+              royaltyPercentage: number;
+            };
+          }) => {
             setThumbnailUri(data.thumbnailUri);
 
             if (!livepeerAsset || !metadata) {
@@ -111,37 +153,40 @@ const HookMultiStepForm = () => {
               );
             }
 
-            const assetMetadata: AssetMetadata = createAssetMetadata(
-              livepeerAsset,
-              metadata,
-              data.thumbnailUri,
-              subtitlesUri
-            );
+            if (!address) {
+              toast.error("Wallet address is required to track points.");
+              return;
+            }
 
-            db.insert(
-              process.env.NEXT_PUBLIC_ORBIS_ASSET_METADATA_MODEL_ID as string
-            );
-
-            // Award points for uploading a video
             try {
+              // Update the video asset with thumbnail and NFT config using videoAsset.id
+              await updateVideoAsset(videoAsset?.id as number, {
+                thumbnailUri: data.thumbnailUri,
+                status: data.nftConfig?.isMintable ? "mintable" : "published",
+                max_supply: data.nftConfig?.maxSupply || null,
+                price: data.nftConfig?.price || null,
+                royalty_percentage: data.nftConfig?.royaltyPercentage || null,
+              });
+
+              // Award points for uploading a video
               await stack.track("video_upload", {
-                account: address as string,
+                account: address,
                 points: 10,
               });
-              // Get updated points balance
+
               const points = await stack.getPoints(address as string);
               toast.success("Video uploaded successfully!", {
                 description: `You earned 10 points! Your total balance is now ${points} points.`,
               });
+
+              router.push("/discover");
             } catch (error) {
-              console.error("Failed to award points:", error);
-              toast.error("Failed to award points", {
+              console.error("Failed to complete video upload:", error);
+              toast.error("Failed to complete video upload", {
                 description:
-                  "Your video was uploaded but we couldn't award points at this time.",
+                  "Your video was uploaded but we couldn't save all information.",
               });
-              // Continue with navigation even if points failed
             }
-            router.push("/discover");
           }}
         />
       </div>

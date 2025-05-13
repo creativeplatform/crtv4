@@ -4,8 +4,7 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname:
-          "bafybeiesvinhgaqvr62rj77jbwkazg3w6bhcrsfyg6zyozasaud53nucnm.ipfs.w3s.link",
+        hostname: "*.ipfs.w3s.link",
         pathname: "/**",
       },
       {
