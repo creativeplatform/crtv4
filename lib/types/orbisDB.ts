@@ -125,7 +125,6 @@ interface FormData {
   location: string;
   playbackId: string;
   description: string;
-  subtitlesUri: string;
   thumbnailUri: string;
   // ... other fields
 }
