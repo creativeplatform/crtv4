@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { fetchAllViews } from "@/app/api/livepeer/views";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface VideoViewMetricsProps {
   playbackId: string;
@@ -36,13 +37,15 @@ const VideoViewMetrics: React.FC<VideoViewMetricsProps> = ({ playbackId }) => {
     fetchViewMetrics();
   }, [playbackId]);
 
-  if (loading) return <p>Loading...</p>;
+  if (loading) return <Skeleton className="w-16 h-4" />;
   if (error) return <p>Error: {error}</p>;
 
   return (
-    <div>
-      <h3>Views: {viewMetrics?.viewCount ?? "0"}</h3>
-    </div>
+    <>
+      <h3 className="font-medium text-sm md:text-base text-gray-500">{`Views: ${
+        viewMetrics?.viewCount ?? "0"
+      }`}</h3>
+    </>
   );
 };
 

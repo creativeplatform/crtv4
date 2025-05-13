@@ -35,22 +35,24 @@ function ProposalList({ space }: ProposalListProps) {
     return <div className="p-4">No proposals found.</div>;
 
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-4 w-full overflow-x-auto">
       {data.proposals.map((proposal) => (
         <Link key={proposal.id} href={`/vote/${proposal.id}`} className="block">
-          <Card className="p-2 sm:p-4 w-full max-w-full cursor-pointer hover:shadow-lg transition-shadow">
-            <h2 className="text-lg font-semibold mb-1">{proposal.title}</h2>
-            <p className="text-sm text-gray-500 mb-2">
+          <Card className="p-2 sm:p-4 w-full cursor-pointer hover:shadow-lg transition-shadow">
+            <h2 className="text-base sm:text-lg font-semibold mb-1 truncate">
+              {proposal.title}
+            </h2>
+            <p className="hidden sm:block text-sm sm:text-base text-gray-500 mb-2">
               {proposal.body.slice(0, 120)}
               {proposal.body.length > 120 ? "..." : ""}
             </p>
-            <div className="flex items-center text-xs text-gray-400">
+            <div className="flex flex-col sm:flex-row sm:items-center text-xs sm:text-sm text-gray-400 gap-1 sm:gap-2">
               <span>
                 Start: {new Date(proposal.start * 1000).toLocaleString()}
               </span>
-              <span className="mx-2">|</span>
+              <span className="hidden sm:inline">|</span>
               <span>End: {new Date(proposal.end * 1000).toLocaleString()}</span>
-              <span className="mx-2">|</span>
+              <span className="hidden sm:inline">|</span>
               <span>State: {proposal.state}</span>
             </div>
           </Card>
