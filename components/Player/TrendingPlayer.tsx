@@ -22,6 +22,7 @@ import { AssetMetadata } from "@/lib/sdk/orbisDB/models/AssetMetadata";
 import "./Player.css";
 import { CheckIcon, ChevronDownIcon } from "lucide-react";
 import { forwardRef } from "react";
+import { ViewsComponent } from "./ViewsComponent";
 
 // const RateSelectItem = forwardRef<HTMLDivElement, Player.RateSelectItemProps>(
 //   ({ children, ...props }, forwardedRef) => {
@@ -154,6 +155,13 @@ export const TrendingPlayer: React.FC<{
                 <Player.Time className="rounded-full bg-black/40 px-2 py-0.5 text-xs font-medium tabular-nums text-white/90" />
 
                 <div className="flex items-center gap-2">
+                  {assetMetadata?.playbackId &&
+                    assetMetadata.playbackId !== "" && (
+                      <ViewsComponent playbackId={assetMetadata.playbackId} />
+                    )}
+                </div>
+
+                {/* <div className="flex items-center gap-2">
                   {assetMetadata?.subtitles && <SubtitlesControl />}
                   <Player.FullscreenTrigger
                     className={`group relative flex h-8 w-8 cursor-pointer touch-none items-center 
@@ -172,7 +180,7 @@ export const TrendingPlayer: React.FC<{
                   >
                     <PictureInPictureIcon className="h-5 w-5 text-white" />
                   </Player.PictureInPictureTrigger>
-                </div>
+                </div> */}
               </div>
             </div>
 

@@ -209,6 +209,11 @@ export function TopVideos() {
                       <TrendingPlayer
                         src={playbackSources[video.playbackId]}
                         title={video.title}
+                        assetMetadata={{
+                          playbackId: video.playbackId,
+                          title: video.title,
+                          description: "",
+                        }}
                       />
                       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-4">
                         <Link
