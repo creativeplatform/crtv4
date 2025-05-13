@@ -3,6 +3,7 @@
 
 import sql from "@/lib/sdk/neon/neonClient";
 import type { VideoAsset } from "@/lib/types/video-asset";
+import { fullLivepeer } from "@/lib/sdk/livepeer/fullClient";
 
 export async function createVideoAsset(
   data: Omit<VideoAsset, "id" | "created_at" | "updated_at">
@@ -74,4 +75,75 @@ export async function updateVideoAsset(
     RETURNING *
   `;
   return result[0];
+}
+
+export interface MultistreamTarget {
+  id?: string;
+  name?: string;
+  url?: string; // Not in SDK, but we use it for UI
+  createdAt?: number;
+  userId?: string;
+  disabled?: boolean;
+}
+
+export interface CreateMultistreamTargetParams {
+  name: string;
+  url: string;
+}
+
+export interface CreateMultistreamTargetResult {
+  target?: MultistreamTarget;
+  error?: string;
+}
+
+export async function createMultistreamTarget({
+  name,
+  url,
+}: CreateMultistreamTargetParams): Promise<CreateMultistreamTargetResult> {
+  if (!name || !url) return { error: "Missing name or URL" };
+  try {
+    const response = await fullLivepeer.multistream.create({ name, url });
+    const target = response.multistreamTarget;
+    if (!target?.id) return { error: "Failed to create multistream target" };
+    return { target: { ...target, url } };
+  } catch (e) {
+    return { error: "Failed to create multistream target" };
+  }
+}
+
+export interface ListMultistreamTargetsResult {
+  targets?: MultistreamTarget[];
+  error?: string;
+}
+
+export async function listMultistreamTargets(): Promise<ListMultistreamTargetsResult> {
+  try {
+    const targets = await fullLivepeer.multistream.getAll();
+    if (!Array.isArray(targets))
+      return { error: "Failed to fetch multistream targets" };
+    return { targets: targets as MultistreamTarget[] };
+  } catch (e) {
+    return { error: "Failed to fetch multistream targets" };
+  }
+}
+
+export interface DeleteMultistreamTargetParams {
+  id: string;
+}
+
+export interface DeleteMultistreamTargetResult {
+  success: boolean;
+  error?: string;
+}
+
+export async function deleteMultistreamTarget({
+  id,
+}: DeleteMultistreamTargetParams): Promise<DeleteMultistreamTargetResult> {
+  if (!id) return { success: false, error: "Missing target ID" };
+  try {
+    await fullLivepeer.multistream.delete(id);
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: "Failed to delete multistream target" };
+  }
 }

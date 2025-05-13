@@ -1,8 +1,9 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { fetchAllViews } from '@/app/api/livepeer/views';
-import { EyeIcon } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { fetchAllViews } from "@/app/api/livepeer/views";
+import { EyeIcon } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ViewsComponentProps {
   playbackId: string;
@@ -15,7 +16,9 @@ interface ViewMetrics {
   legacyViewCount: number;
 }
 
-export const ViewsComponent: React.FC<ViewsComponentProps> = ({ playbackId }) => {
+export const ViewsComponent: React.FC<ViewsComponentProps> = ({
+  playbackId,
+}) => {
   const [viewMetrics, setViewMetrics] = useState<ViewMetrics | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +26,7 @@ export const ViewsComponent: React.FC<ViewsComponentProps> = ({ playbackId }) =>
   useEffect(() => {
     async function fetchViewMetrics() {
       if (!playbackId) {
-        setError('No playback ID provided');
+        setError("No playback ID provided");
         setLoading(false);
         return;
       }
@@ -34,11 +37,11 @@ export const ViewsComponent: React.FC<ViewsComponentProps> = ({ playbackId }) =>
         if (result) {
           setViewMetrics(result);
         } else {
-          setError('Failed to fetch view metrics');
+          setError("Failed to fetch view metrics");
         }
       } catch (err) {
-        setError((err as Error).message || 'Failed to fetch view metrics');
-        console.error('Error fetching view metrics:', err);
+        setError((err as Error).message || "Failed to fetch view metrics");
+        console.error("Error fetching view metrics:", err);
       } finally {
         setLoading(false);
       }
@@ -51,7 +54,7 @@ export const ViewsComponent: React.FC<ViewsComponentProps> = ({ playbackId }) =>
     return (
       <div className="flex items-center gap-1 text-sm text-gray-400">
         <EyeIcon className="h-4 w-4" />
-        <span className="animate-pulse">Loading...</span>
+        <Skeleton className="h-4 w-16 bg-slate-300" />
       </div>
     );
   }
@@ -65,8 +68,9 @@ export const ViewsComponent: React.FC<ViewsComponentProps> = ({ playbackId }) =>
     );
   }
 
-  const totalViews = (viewMetrics.viewCount ?? 0) + (viewMetrics.legacyViewCount ?? 0);
-  
+  const totalViews =
+    (viewMetrics.viewCount ?? 0) + (viewMetrics.legacyViewCount ?? 0);
+
   return (
     <div className="flex items-center gap-1 text-sm text-gray-200">
       <EyeIcon className="h-4 w-4" />

@@ -16,7 +16,7 @@ import { ProposalListSkeleton } from "@/components/proposal-list/ProposalListSke
 
 export default function VotePage() {
   return (
-    <div className={"min-h-screen p-6"}>
+    <div className="min-h-screen px-2 sm:px-6 py-6">
       <div className="my-5 p-4">
         <Breadcrumb>
           <BreadcrumbList>
@@ -40,10 +40,12 @@ export default function VotePage() {
         </Breadcrumb>
       </div>
       <div>
-        <h1 className="text-xl font-bold">Voting</h1>
+        <h1 className="text-lg sm:text-xl font-bold">Voting</h1>
       </div>
       <div className="mt-5">
-        <p>Have your say in the future of the Creative ecosystem.</p>
+        <p className="text-base sm:text-lg">
+          Have your say in the future of the Creative ecosystem.
+        </p>
       </div>
       <div className="p-4">
         <div className="grid gap-4 w-full max-w-full">
