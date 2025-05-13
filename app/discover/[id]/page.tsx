@@ -12,6 +12,7 @@ import {
 import { Slash } from "lucide-react";
 // import { ViewsComponent } from "@/components/Player/ViewsComponent";
 import VideoViewMetrics from "@/components/Videos/VideoViewMetrics";
+import { Metadata } from "next";
 
 type VideoDetailsPageProps = {
   params: {
@@ -85,4 +86,31 @@ export default async function VideoDetailsPage({
       </div>
     </div>
   );
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { id: string };
+}): Promise<Metadata> {
+  const asset = await fetchAssetId(params.id);
+  if (!asset?.asset) return {};
+
+  return {
+    title: asset.asset.name ?? "Watch Video",
+    openGraph: {
+      title: asset.asset.name,
+      images: [(asset.asset as any).thumbnailUri || "/default-thumbnail.webp"],
+      videos: asset.asset.playbackUrl
+        ? [
+            {
+              url: asset.asset.playbackUrl,
+              type: "video/mp4",
+              width: 1280,
+              height: 720,
+            },
+          ]
+        : [],
+    },
+  };
 }

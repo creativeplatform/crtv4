@@ -13,8 +13,28 @@ import Footer from "@/components/Footer";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://tv.creativeplatform.xyz"),
   title: "Creative TV",
   description: "The Way Content Should Be.",
+  openGraph: {
+    title: "Creative TV",
+    description: "The Way Content Should Be.",
+    images: [
+      {
+        url: "https://tv.creativeplatform.xyz/logo-tv.gif",
+        width: 500,
+        height: 500,
+        alt: "Creative TV Animated Logo",
+        type: "image/gif",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Creative TV",
+    description: "The Way Content Should Be.",
+    images: ["https://tv.creativeplatform.xyz/logo-tv.gif"],
+  },
 };
 
 export default async function RootLayout({
