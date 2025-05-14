@@ -22,6 +22,8 @@ import {
   listMultistreamTargets,
   MultistreamTarget,
 } from "@/services/video-assets";
+import { useParams } from "next/navigation";
+import { ClipCreator } from "@/components/Live/ClipCreator";
 
 export default function LivePage() {
   const { isConnected } = useOrbisContext();
@@ -29,6 +31,7 @@ export default function LivePage() {
     MultistreamTarget[]
   >([]);
   const [isLoadingTargets, setIsLoadingTargets] = useState(false);
+  const { address: streamId } = useParams();
 
   useEffect(() => {
     async function fetchTargets() {
@@ -103,11 +106,18 @@ export default function LivePage() {
             <Broadcast
               streamKey={process.env.NEXT_PUBLIC_STREAM_KEY as string}
             />
+            <ClipCreator
+              playbackId={process.env.NEXT_PUBLIC_PLAYBACK_ID as string}
+              sessionId={process.env.NEXT_PUBLIC_SESSION_ID as string}
+            />
             <div className="mt-4 border-t border-white/20 pt-3 max-w-[576px] mx-auto">
               <p className="mb-2 text-sm font-semibold text-white">
                 Multistream Targets
               </p>
-              <MultistreamTargetsForm onTargetAdded={handleTargetAdded} />
+              <MultistreamTargetsForm
+                streamId={Array.isArray(streamId) ? streamId[0] : streamId}
+                onTargetAdded={handleTargetAdded}
+              />
               {isLoadingTargets ? (
                 <div className="text-xs text-white mt-2">
                   Loading targets...
