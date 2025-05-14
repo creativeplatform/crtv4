@@ -87,8 +87,11 @@ export interface MultistreamTarget {
 }
 
 export interface CreateMultistreamTargetParams {
+  streamId: string;
   name: string;
   url: string;
+  profile?: string;
+  videoOnly?: boolean;
 }
 
 export interface CreateMultistreamTargetResult {
@@ -97,14 +100,24 @@ export interface CreateMultistreamTargetResult {
 }
 
 export async function createMultistreamTarget({
+  streamId,
   name,
   url,
+  profile = "720p0",
+  videoOnly = false,
 }: CreateMultistreamTargetParams): Promise<CreateMultistreamTargetResult> {
-  if (!name || !url) return { error: "Missing name or URL" };
+  if (!streamId || !name || !url)
+    return { error: "Missing streamId, name, or URL" };
   try {
-    const response = await fullLivepeer.multistream.create({ name, url });
-    const target = response.multistreamTarget;
-    if (!target?.id) return { error: "Failed to create multistream target" };
+    const target = await fullLivepeer.stream.addMultistreamTarget(
+      {
+        profile,
+        videoOnly,
+        spec: { name, url },
+      },
+      streamId
+    );
+    if (!target) return { error: "Failed to create multistream target" };
     return { target: { ...target, url } };
   } catch (e) {
     return { error: "Failed to create multistream target" };
