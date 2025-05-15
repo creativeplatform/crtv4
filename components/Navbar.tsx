@@ -53,6 +53,7 @@ import type { Chain as ViemChain } from "viem/chains";
 import { AccountDropdown } from "@/components/account-dropdown/AccountDropdown";
 import { useMembershipVerification } from "@/lib/hooks/unlock/useMembershipVerification";
 import { MembershipSection } from "./account-dropdown/MembershipSection";
+import { ChainSelect } from "@/components/ui/select";
 
 type UseUserResult = (AccountUser & { type: "eoa" | "sca" }) | null;
 
@@ -413,38 +414,6 @@ export default function Navbar() {
     }
   };
 
-  // Add this function to handle chain switching
-  const handleChainSwitch = async (
-    newChain: ViemChain,
-    chainName: string
-  ): Promise<void> => {
-    try {
-      // Check if already switching chains
-      if (isSettingChain) {
-        toast.warning("Chain switch already in progress");
-        return;
-      }
-
-      // Check if already on the selected chain
-      if (currentChain.id === newChain.id) {
-        toast.info(`Already connected to ${chainName}`);
-        return;
-      }
-
-      console.log("Switching to chain:", {
-        chainId: newChain.id,
-        chainName,
-      });
-
-      setChain({ chain: newChain });
-      toast.success(`Switched to ${chainName}`);
-      setCurrentChainName(chainName);
-    } catch (error) {
-      console.error("Error switching chain:", error);
-      toast.error(`Failed to switch to ${chainName}`);
-    }
-  };
-
   return (
     <header className={headerClassName}>
       <div className="container mx-auto px-4 sm:px-6">
@@ -583,40 +552,7 @@ export default function Navbar() {
                     {/* Add Chain Selector here */}
                     <div className="mt-4">
                       <p className="text-sm font-medium mb-2">Network</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {[base, optimism, baseSepolia].map((chain) => (
-                          <Button
-                            key={chain.id}
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                              handleChainSwitch(chain, getChainName(chain))
-                            }
-                            disabled={
-                              isSettingChain || currentChain.id === chain.id
-                            }
-                            className={`flex items-center justify-start space-x-2 ${
-                              currentChain.id === chain.id
-                                ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-                                : ""
-                            }`}
-                          >
-                            <Image
-                              src={getChainLogo(chain)}
-                              alt={chain.name}
-                              width={20}
-                              height={20}
-                              className="rounded-full"
-                            />
-                            <span className="text-xs">
-                              {getChainName(chain)}
-                            </span>
-                            {currentChain.id === chain.id && (
-                              <NetworkStatus isConnected={isNetworkConnected} />
-                            )}
-                          </Button>
-                        ))}
-                      </div>
+                      <ChainSelect className="w-full" />
                     </div>
 
                     <div className="grid grid-cols-2 gap-2">
