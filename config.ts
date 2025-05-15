@@ -11,19 +11,21 @@ import { SITE_TOPIC_LOGO } from "./context/context";
 import Image from "next/image";
 import React from "react";
 
-// Define the chains we want to support
-const chains = [baseSepolia, base, optimism];
+// Create query client
+export const queryClient = new QueryClient();
 
-// Default chain for initial connection
-const defaultChain = baseSepolia;
+// Determine environment
+const isProduction = process.env.NODE_ENV === "production";
+
+// Set default chain and supported chains based on environment
+const defaultChain = isProduction ? base : baseSepolia;
+
+const supportedChains = isProduction ? [base, optimism] : [baseSepolia];
 
 // Create transport
 const transport = alchemy({
   apiKey: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY as string,
 });
-
-// Create query client
-export const queryClient = new QueryClient();
 
 const uiConfig: AlchemyAccountsUIConfig = {
   illustrationStyle: "linear",
@@ -60,7 +62,7 @@ export const config = createConfig(
   {
     transport,
     chain: defaultChain,
-    chains: chains.map((chain) => ({
+    chains: supportedChains.map((chain) => ({
       chain,
       transport,
     })),
