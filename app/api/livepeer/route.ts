@@ -1,44 +1,67 @@
-'use server';
+"use server";
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
-  const livepeerUrl = `${process.env.LIVEPEER_FULL_API_URL}/api/asset`;
+  const livepeerUrl = `${process.env.LIVEPEER_FULL_API_URL}/api/stream`;
 
-  const options = {
+  if (!process.env.LIVEPEER_FULL_API_KEY)
+    return NextResponse.json(
+      { error: "Missing Livepeer API key" },
+      { status: 500 }
+    );
+
+  const response = await fetch(livepeerUrl, {
     headers: {
       Authorization: `Bearer ${process.env.LIVEPEER_FULL_API_KEY}`,
     },
-  };
+    cache: "no-store",
+  });
 
-  const response = await fetch(livepeerUrl, options);
-
-  // if (!response.ok) {
-  //   return NextResponse.json({ error: 'Internal Server Error', data: await response.json() }, { status: 500 });
-  // }
+  if (!response.ok)
+    return NextResponse.json(
+      { error: "Failed to fetch streams", details: await response.text() },
+      { status: response.status }
+    );
 
   const json = await response.json();
-
   return NextResponse.json(json);
 }
 
 export async function POST(request: NextRequest) {
   const livepeerUpload = `${process.env.LIVEPEER_FULL_API_URL}/api/asset/request-upload`;
 
-  const options = {
+  if (!process.env.LIVEPEER_FULL_API_KEY)
+    return NextResponse.json(
+      { error: "Missing Livepeer API key" },
+      { status: 500 }
+    );
+
+  let body: string;
+  try {
+    body = await request.text();
+  } catch (err) {
+    return NextResponse.json(
+      { error: "Invalid request body" },
+      { status: 400 }
+    );
+  }
+
+  const response = await fetch(livepeerUpload, {
+    method: "POST",
     headers: {
       Authorization: `Bearer ${process.env.LIVEPEER_FULL_API_KEY}`,
-      ContentType: 'application/json',
+      "Content-Type": "application/json",
     },
-  };
+    body,
+  });
 
-  const response = await fetch(livepeerUpload, options);
-
-  // if (!response.ok) {
-  //   return NextResponse.json({ error: 'Internal Server Error', data: await response.json() }, { status: 500 });
-  // }
+  if (!response.ok)
+    return NextResponse.json(
+      { error: "Failed to upload asset", details: await response.text() },
+      { status: response.status }
+    );
 
   const json = await response.json();
-
   return NextResponse.json(json);
 }
