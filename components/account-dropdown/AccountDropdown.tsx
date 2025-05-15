@@ -101,6 +101,7 @@ import { shortenAddress } from "@/lib/utils/utils";
 import Link from "next/link";
 import { useMembershipVerification } from "@/lib/hooks/unlock/useMembershipVerification";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ChainSelect } from "@/components/ui/select";
 
 const chainIconMap: Record<number, string> = {
   [base.id]: "/images/chains/base.svg",
@@ -331,12 +332,6 @@ export function AccountDropdown() {
   ) => {
     setDialogAction(action);
     setIsDialogOpen(true);
-  };
-
-  const handleChainSwitch = async (newChain: any) => {
-    if (isSettingChain) return;
-    if (chain.id === newChain.id) return;
-    setChain({ chain: newChain });
   };
 
   const handleCreateSessionKey = async () => {
@@ -772,71 +767,10 @@ export function AccountDropdown() {
   return (
     <div className="flex items-center gap-2">
       <TooltipProvider>
-        <DropdownMenu>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="gap-2 items-center transition-all hover:bg-gray-100 dark:hover:bg-gray-800 hover:border-blue-500 hidden md:flex"
-                >
-                  <div className="relative">
-                    <Image
-                      src={getChainIcon(chain)}
-                      alt={`${chain.name} network icon`}
-                      width={32}
-                      height={32}
-                      className="rounded-full"
-                    />
-                    <div className="absolute -bottom-1 -right-1">
-                      <NetworkStatus isConnected={isNetworkConnected} />
-                    </div>
-                  </div>
-                  <span>{chain.name}</span>
-                </Button>
-              </DropdownMenuTrigger>
-            </TooltipTrigger>
-            <TooltipContent>
-              <pre className="text-xs">{chain.name}</pre>
-            </TooltipContent>
-          </Tooltip>
-          <DropdownMenuContent
-            align="end"
-            className="animate-in fade-in-80 slide-in-from-top-5"
-          >
-            <DropdownMenuLabel className="font-semibold text-sm text-gray-500 dark:text-gray-400">
-              Switch Network
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {[base, optimism, baseSepolia].map((chain) => (
-              <Tooltip key={chain.id}>
-                <TooltipTrigger asChild>
-                  <DropdownMenuItem
-                    onClick={() => handleChainSwitch(chain)}
-                    disabled={isSettingChain || chain.id === chain.id}
-                    className={`
-                      flex items-center cursor-pointer
-                      hover:bg-gray-100 dark:hover:bg-gray-800
-                      transition-colors
-                    `}
-                  >
-                    <Image
-                      src={getChainIcon(chain)}
-                      alt={`${chain.name} network icon`}
-                      width={32}
-                      height={32}
-                      className="mr-2 rounded-full"
-                    />
-                    {chain.name}
-                  </DropdownMenuItem>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <pre className="text-xs">{chain.name}</pre>
-                </TooltipContent>
-              </Tooltip>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* Chain Selector (desktop & mobile) - only show if user is connected */}
+        <div className="hidden md:block">
+          <ChainSelect className="w-44" />
+        </div>
       </TooltipProvider>
 
       {/* Desktop Dropdown */}
