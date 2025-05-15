@@ -1,5 +1,5 @@
-import { StackClient } from '@stackso/js-core';
-import crypto from 'crypto';
+import { StackClient } from "@stackso/js-core";
+import crypto from "crypto";
 
 // Initialize the client with custom event ID generation
 export const stack = new StackClient({

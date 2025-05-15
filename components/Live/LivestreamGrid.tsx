@@ -1,27 +1,53 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { fullLivepeer } from "@/lib/sdk/livepeer/fullClient";
 import { Card } from "@/components/ui/card";
 import Link from "next/link";
 import { Stream } from "livepeer/models/components";
 import { VideoCardSkeleton } from "../Videos/VideoCardSkeleton";
+import { LivestreamThumbnail } from "./LivestreamThumbnail";
+import { getThumbnailUrl } from "@/services/livepeer-thumbnails";
+
+async function fetchStreamsFromApi(): Promise<Stream[]> {
+  const res = await fetch("/api/livepeer");
+  if (!res.ok) throw new Error("Failed to fetch streams");
+  return res.json();
+}
 
 export default function LivestreamGrid() {
   const [streams, setStreams] = useState<Stream[]>([]);
   const [loading, setLoading] = useState(true);
+  const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const fetchStreams = async () => {
       try {
-        const result = await fullLivepeer.stream.getAll();
+        const result = await fetchStreamsFromApi();
+        // Only include streams that are currently active
+        const activeStreams = (result ?? []).filter(
+          (stream) => stream.isActive === true
+        );
         const mappedStreams =
-          result?.data?.map((stream) => ({
+          activeStreams.map((stream) => ({
             ...stream,
-            name: stream.name || `Stream ${stream.id}`, // Provide a default name if none exists
+            name: stream.name || `Stream ${stream.id}`,
           })) ?? [];
         setStreams(mappedStreams);
         setLoading(false);
+        mappedStreams.forEach(async (stream) => {
+          if (!stream.playbackId || !stream.id) return;
+          const res = (await getThumbnailUrl({
+            playbackId: stream.playbackId,
+          })) as import("@/lib/types/actions").ActionResponse<{
+            thumbnailUrl: string;
+          }>;
+          if (res.success && res.data?.thumbnailUrl) {
+            setThumbnails((prev) => ({
+              ...prev,
+              [String(stream.id)]: res.data!.thumbnailUrl,
+            }));
+          }
+        });
       } catch (error) {
         console.error("Error fetching streams:", error);
         setLoading(false);
@@ -54,7 +80,15 @@ export default function LivestreamGrid() {
         <Link key={stream.id} href={`/watch/${stream.playbackId}`}>
           <Card className="overflow-hidden transition-shadow hover:shadow-lg">
             <div className="relative aspect-video bg-gray-100">
-              {/* Livestream thumbnail */}
+              {thumbnails?.[String(stream.id)] ? (
+                <LivestreamThumbnail
+                  thumbnailUrl={thumbnails[String(stream.id)]}
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-gray-400">
+                  Loading thumbnail...
+                </div>
+              )}
               <div className="absolute right-2 top-2 rounded-full bg-red-500 px-2 py-1 text-xs text-white">
                 LIVE
               </div>
