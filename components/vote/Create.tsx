@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAccount, useChain } from "@account-kit/react";
 import { useRouter } from "next/navigation";
-import { createProposal } from "@/app/vote/create/actions";
+import { createProposal } from "@/app/vote/create/[address]/actions";
 import {
   Form,
   FormField,

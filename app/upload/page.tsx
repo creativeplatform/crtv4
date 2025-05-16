@@ -1,58 +1,25 @@
 "use client";
+import { useEffect } from "react";
+import { useUser, useSmartAccountClient } from "@account-kit/react";
+import { useRouter } from "next/navigation";
+import { Skeleton } from "@/components/ui/skeleton";
 
-import { MembershipGuard } from "@/components/auth/MembershipGuard";
-import { ProfilePageGuard } from "@/components/UserProfile/UserProfile";
-import HookMultiStepForm from "@/components/Videos/Upload";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Slash } from "lucide-react";
+function UploadRedirect() {
+  const router = useRouter();
+  const { address: scaAddress } = useSmartAccountClient({});
+  const user = useUser();
+  const eoaAddress = user?.address;
 
-export default function UploadPage() {
+  useEffect(() => {
+    if (eoaAddress) router.replace(`/upload/${eoaAddress || scaAddress}`);
+  }, [eoaAddress, scaAddress, router]);
+
   return (
-    <ProfilePageGuard>
-      <MembershipGuard>
-        <div className="min-h-screen p-6">
-          <div className="mb-8 rounded-lg bg-white p-8 shadow-md">
-            <h1 className="mb-6 text-center text-4xl font-bold text-gray-800">
-              Upload Your Video
-            </h1>
-            <p className="mb-8 text-center text-gray-600">
-              Upload your video to the platform and share it with the world.
-            </p>
-          </div>
-          <div className="my-5 p-4">
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem>
-                  <BreadcrumbLink href="/">
-                    <span role="img" aria-label="home">
-                      🏠
-                    </span>{" "}
-                    Home
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator>
-                  <Slash />
-                </BreadcrumbSeparator>
-                <BreadcrumbItem>
-                  <BreadcrumbLink>
-                    <BreadcrumbPage>Upload</BreadcrumbPage>
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          </div>
-          <div>
-            <HookMultiStepForm />
-          </div>
-        </div>
-      </MembershipGuard>
-    </ProfilePageGuard>
+    <div className="flex flex-col items-center justify-center h-screen gap-4">
+      <Skeleton className="h-12 w-12 rounded-full" />
+      <Skeleton className="h-4 w-32 rounded" />
+    </div>
   );
 }
+
+export default UploadRedirect;

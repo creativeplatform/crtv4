@@ -1,49 +1,25 @@
-import React from "react";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Slash } from "lucide-react";
-import { Create } from "@/components/vote/Create";
-import { MembershipGuard } from "@/components/auth/MembershipGuard";
+"use client";
+import { useEffect } from "react";
+import { useUser, useSmartAccountClient } from "@account-kit/react";
+import { useRouter } from "next/navigation";
+import { Skeleton } from "@/components/ui/skeleton";
 
-const CreateVotePage = () => {
+function CreateVoteRedirect() {
+  const router = useRouter();
+  const { address: scaAddress } = useSmartAccountClient({});
+  const user = useUser();
+  const eoaAddress = user?.address;
+
+  useEffect(() => {
+    if (eoaAddress) router.replace(`/vote/create/${eoaAddress || scaAddress}`);
+  }, [eoaAddress, scaAddress, router]);
+
   return (
-    <div className={"container"}>
-      <div className="my-5 p-4">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/">
-                <span role="img" aria-label="home">
-                  🏠
-                </span>{" "}
-                Home
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator>
-              <Slash />
-            </BreadcrumbSeparator>
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/vote">Vote</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator>
-              <Slash />
-            </BreadcrumbSeparator>
-            <BreadcrumbItem>
-              <BreadcrumbPage>Create</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-      </div>
-      <MembershipGuard>
-        <Create />
-      </MembershipGuard>
+    <div className="flex flex-col items-center justify-center h-screen gap-4">
+      <Skeleton className="h-12 w-12 rounded-full" />
+      <Skeleton className="h-4 w-32 rounded" />
     </div>
   );
-};
-export default CreateVotePage;
+}
+
+export default CreateVoteRedirect;
