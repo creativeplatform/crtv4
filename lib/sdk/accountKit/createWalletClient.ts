@@ -6,6 +6,6 @@ export const walletClient = createWalletClient({
   transport: http(
     `https://base-sepolia.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`
   ),
-  chain: baseSepolia,
+  chain: base,
   account: signer.toViemAccount(),
 });

@@ -5,6 +5,7 @@ import { useSmartAccountClient, useUser } from "@account-kit/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatEther, createPublicClient, http } from "viem";
 import { testTokenContract } from "@/lib/contracts/TestToken";
+import { usdcTokenContract } from "@/lib/contracts/USDCToken";
 import { base, baseSepolia, optimism } from "@account-kit/infra";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -46,7 +47,7 @@ export function TokenBalance() {
   const { client } = useSmartAccountClient({});
   const user = useUser();
   const [ethBalance, setEthBalance] = useState<bigint | null>(null);
-  const [ttBalance, setTtBalance] = useState<bigint | null>(null);
+  const [usdcBalance, setUsdcBalance] = useState<bigint | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -56,13 +57,13 @@ export function TokenBalance() {
         const address = client?.account?.address || user?.address;
         if (!address) {
           setEthBalance(null);
-          setTtBalance(null);
+          setUsdcBalance(null);
           return;
         }
 
         // Create a public client for the current chain
         const publicClient = createPublicClient({
-          chain: baseSepolia, // You can make this dynamic based on the current chain
+          chain: base, // You can make this dynamic based on the current chain
           transport: http(),
         });
 
@@ -73,17 +74,17 @@ export function TokenBalance() {
         setEthBalance(ethBalance);
 
         // Get TT balance
-        const ttBalance = (await publicClient.readContract({
-          address: testTokenContract.address,
-          abi: testTokenContract.abi,
+        const usdcBalance = (await publicClient.readContract({
+          address: usdcTokenContract.address,
+          abi: usdcTokenContract.abi,
           functionName: "balanceOf",
           args: [address as `0x${string}`],
         })) as bigint;
-        setTtBalance(ttBalance);
+        setUsdcBalance(usdcBalance);
       } catch (error) {
         console.error("Error fetching balances:", error);
         setEthBalance(null);
-        setTtBalance(null);
+        setUsdcBalance(null);
       } finally {
         setIsLoading(false);
       }
@@ -103,7 +104,7 @@ export function TokenBalance() {
             <Skeleton className="h-5 w-16" />
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-sm">TT</span>
+            <span className="text-sm">USDC</span>
             <Skeleton className="h-5 w-16" />
           </div>
         </CardContent>
@@ -126,9 +127,11 @@ export function TokenBalance() {
           </span>
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-sm">TT</span>
+          <span className="text-sm">USDC</span>
           <span className="text-sm font-medium">
-            {ttBalance ? formatBalance(formatEther(ttBalance), "TT") : "0 TT"}
+            {usdcBalance
+              ? formatBalance(formatEther(usdcBalance), "USDC")
+              : "0 USDC"}
           </span>
         </div>
       </CardContent>

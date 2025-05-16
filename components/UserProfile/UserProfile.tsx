@@ -90,12 +90,12 @@ const ProfilePage: NextPage = () => {
   )?.find((m: MembershipDetails) => m.isValid);
 
   // Setup Alchemy clients
-  const publicClient = createAlchemyPublicRpcClient({
-    transport: alchemy({
-      apiKey: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY as string,
-    }),
-    chain: baseSepolia,
-  });
+  // const publicClient = createAlchemyPublicRpcClient({
+  //   transport: alchemy({
+  //     apiKey: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY as string,
+  //   }),
+  //   chain: baseSepolia,
+  // });
 
   if (loading) return <div>Loading...</div>;
   if (serverMembershipError)
