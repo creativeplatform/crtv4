@@ -26,6 +26,8 @@ import {
   listMultistreamTargets,
   MultistreamTarget,
 } from "@/services/video-assets";
+import { MultistreamTargetsList } from "./multicast/MultistreamTargetList";
+import { MultistreamTargetsForm } from "./multicast/MultistreamTargetsForm";
 
 interface BroadcastProps {
   streamKey: string | null;
@@ -276,6 +278,7 @@ function BroadcastWithControls({ streamKey }: BroadcastProps) {
                   <Settings
                     ref={settingsButtonRef}
                     className="h-5 w-5 flex-shrink-0 transition hover:scale-110"
+                    streamId={streamData?.id || ""}
                   >
                     <SettingsIcon className="h-full w-full text-white" />
                   </Settings>
@@ -393,7 +396,11 @@ export const BroadcastLoading = ({
 
 export const Settings = React.forwardRef(
   (
-    { className, children }: { className?: string; children?: React.ReactNode },
+    {
+      className,
+      children,
+      streamId,
+    }: { className?: string; children?: React.ReactNode; streamId: string },
     ref: React.Ref<HTMLButtonElement> | undefined
   ) => {
     const [multistreamTargets, setMultistreamTargets] = React.useState<
@@ -475,7 +482,10 @@ export const Settings = React.forwardRef(
                 <p className="mb-2 text-sm font-semibold text-white">
                   Multistream Targets
                 </p>
-                <MultistreamTargetsForm onTargetAdded={handleTargetAdded} />
+                <MultistreamTargetsForm
+                  streamId={streamId}
+                  onTargetAdded={handleTargetAdded}
+                />
                 {isLoadingTargets ? (
                   <div className="text-xs text-white mt-2">
                     Loading targets...
