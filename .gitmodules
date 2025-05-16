@@ -1,0 +1,3 @@
+[submodule "submodules"]
+	path = submodules
+	url = https://sirgawain0x@github.com/creativeplatform/crtv-mini.git
