@@ -46,7 +46,7 @@ export default function useModularAccount(props?: UseModularAccountProps) {
     if (!smartAccountClient) return null;
 
     try {
-      return smartAccountClient.account.address;
+      return address as string;
     } catch (err) {
       console.error("Error getting account address:", err);
       return null;

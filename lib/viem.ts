@@ -1,5 +1,5 @@
 import { createPublicClient } from "viem";
-import { alchemy, base, baseSepolia } from "@account-kit/infra";
+import { alchemy, base } from "@account-kit/infra";
 
 // Create a public client for reading blockchain data
 export const publicClient = createPublicClient({
