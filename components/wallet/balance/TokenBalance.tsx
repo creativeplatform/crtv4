@@ -1,12 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSmartAccountClient, useUser } from "@account-kit/react";
+import { useSmartAccountClient, useUser, useChain } from "@account-kit/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatEther, createPublicClient, http } from "viem";
-import { testTokenContract } from "@/lib/contracts/TestToken";
-import { usdcTokenContract } from "@/lib/contracts/USDCToken";
-import { base, baseSepolia, optimism } from "@account-kit/infra";
+import { getUsdcTokenContract } from "@/lib/contracts/USDCToken";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface TokenBalanceData {
@@ -46,6 +44,7 @@ function formatBalance(balance: string, symbol: string): string {
 export function TokenBalance() {
   const { client } = useSmartAccountClient({});
   const user = useUser();
+  const { chain } = useChain();
   const [ethBalance, setEthBalance] = useState<bigint | null>(null);
   const [usdcBalance, setUsdcBalance] = useState<bigint | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -55,15 +54,21 @@ export function TokenBalance() {
       setIsLoading(true);
       try {
         const address = client?.account?.address || user?.address;
-        if (!address) {
+        if (!address || !chain) {
           setEthBalance(null);
           setUsdcBalance(null);
           return;
         }
 
-        // Create a public client for the current chain
+        // Map chain.id to key for getUsdcTokenContract
+        let chainKey: keyof typeof import("@/lib/contracts/USDCToken").USDC_TOKEN_ADDRESSES =
+          "base";
+        if (chain.id === 8453) chainKey = "base";
+        else if (chain.id === 10) chainKey = "optimism";
+        // Add more mappings as needed
+
         const publicClient = createPublicClient({
-          chain: base, // You can make this dynamic based on the current chain
+          chain,
           transport: http(),
         });
 
@@ -73,7 +78,8 @@ export function TokenBalance() {
         });
         setEthBalance(ethBalance);
 
-        // Get TT balance
+        // Get USDC balance
+        const usdcTokenContract = getUsdcTokenContract(chainKey);
         const usdcBalance = (await publicClient.readContract({
           address: usdcTokenContract.address,
           abi: usdcTokenContract.abi,
@@ -90,7 +96,7 @@ export function TokenBalance() {
       }
     }
     getBalances();
-  }, [client, user]);
+  }, [client, user, chain]);
 
   if (isLoading) {
     return (

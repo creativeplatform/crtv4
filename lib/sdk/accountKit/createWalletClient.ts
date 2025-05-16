@@ -1,6 +1,6 @@
 import { signer } from "./signer";
 import { createWalletClient, http } from "viem";
-import { baseSepolia, base } from "viem/chains";
+import { base } from "viem/chains";
 
 export const walletClient = createWalletClient({
   transport: http(

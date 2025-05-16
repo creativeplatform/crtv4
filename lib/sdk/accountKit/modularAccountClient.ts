@@ -1,5 +1,5 @@
 import { createModularAccountV2Client } from "@account-kit/smart-contracts";
-import { baseSepolia, alchemy, base } from "@account-kit/infra";
+import { alchemy, base } from "@account-kit/infra";
 import { generatePrivateKey } from "viem/accounts";
 import { type Chain } from "viem";
 import { modularAccountFactoryAddresses } from "@/lib/utils/modularAccount";
