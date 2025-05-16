@@ -39,13 +39,7 @@ import {
 import type { User as AccountUser } from "@account-kit/signer";
 import useModularAccount from "@/lib/hooks/accountkit/useModularAccount";
 import { createPublicClient, http } from "viem";
-import {
-  alchemy,
-  mainnet,
-  base,
-  baseSepolia,
-  optimism,
-} from "@account-kit/infra";
+import { alchemy, mainnet, base, optimism } from "@account-kit/infra";
 import { ArrowBigDown, ArrowBigUp } from "lucide-react";
 import WertButton from "./wallet/buy/fund-button";
 import { TokenBalance } from "./wallet/balance/TokenBalance";
@@ -118,8 +112,6 @@ const getChainGradient = (chain: ViemChain) => {
   switch (chain.id) {
     case base.id:
       return "from-[#0052FF] to-[#0052FF]";
-    case baseSepolia.id:
-      return "from-[#0052FF] to-[#0052FF]";
     case optimism.id:
       return "from-[#FF0420] to-[#FF0420]";
     default:
@@ -131,8 +123,6 @@ const getChainName = (chain: ViemChain) => {
   switch (chain.id) {
     case base.id:
       return "Base";
-    case baseSepolia.id:
-      return "Base Sepolia";
     case optimism.id:
       return "Optimism";
     default:
@@ -145,8 +135,6 @@ const getChainLogo = (chain: ViemChain) => {
   switch (chain.id) {
     case base.id:
       return "/images/chains/base.svg";
-    case baseSepolia.id:
-      return "/images/chains/base-sepolia.svg";
     case optimism.id:
       return "/images/chains/optimism.svg";
     default:

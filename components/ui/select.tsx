@@ -4,7 +4,7 @@ import * as React from "react";
 import * as SelectPrimitive from "@radix-ui/react-select";
 import { Check, ChevronDown, ChevronUp } from "lucide-react";
 import { useChain } from "@account-kit/react";
-import { base, baseSepolia, optimism } from "@account-kit/infra";
+import { base, optimism } from "@account-kit/infra";
 import Image from "next/image";
 
 import { cn } from "@/lib/utils/utils";
@@ -175,7 +175,7 @@ SelectSeparator.displayName = SelectPrimitive.Separator.displayName;
 
 function ChainSelect({ className }: { className?: string }) {
   const { chain, setChain, isSettingChain } = useChain();
-  const supportedChains = [base, optimism, baseSepolia];
+  const supportedChains = [base, optimism];
 
   function handleChange(chainId: string) {
     const selected = supportedChains.find((c) => c.id.toString() === chainId);
@@ -240,8 +240,6 @@ function getChainIcon(chainId: number): string {
   switch (chainId) {
     case base.id:
       return "/images/chains/base.svg";
-    case baseSepolia.id:
-      return "/images/chains/base-sepolia.svg";
     case optimism.id:
       return "/images/chains/optimism.svg";
     default:
