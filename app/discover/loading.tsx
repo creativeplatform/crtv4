@@ -1,7 +1,6 @@
-import React from "react";
-import { Skeleton } from "@/components/ui/skeleton";
+import React from 'react';
 
 export default function Loading() {
   // Add a custom loading Skeleton component
-  return <Skeleton className="w-full h-full" />;
+  return <p>Loading Page</p>;
 }

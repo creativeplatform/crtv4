@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSmartAccountClient, useUser } from "@account-kit/react";
+import { useSmartAccountClient, useUser, useChain } from "@account-kit/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatEther, createPublicClient, http } from "viem";
-import { testTokenContract } from "@/lib/contracts/TestToken";
-import { base, baseSepolia, optimism } from "@account-kit/infra";
+import { getUsdcTokenContract } from "@/lib/contracts/USDCToken";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface TokenBalanceData {
@@ -45,8 +44,9 @@ function formatBalance(balance: string, symbol: string): string {
 export function TokenBalance() {
   const { client } = useSmartAccountClient({});
   const user = useUser();
+  const { chain } = useChain();
   const [ethBalance, setEthBalance] = useState<bigint | null>(null);
-  const [ttBalance, setTtBalance] = useState<bigint | null>(null);
+  const [usdcBalance, setUsdcBalance] = useState<bigint | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -54,15 +54,21 @@ export function TokenBalance() {
       setIsLoading(true);
       try {
         const address = client?.account?.address || user?.address;
-        if (!address) {
+        if (!address || !chain) {
           setEthBalance(null);
-          setTtBalance(null);
+          setUsdcBalance(null);
           return;
         }
 
-        // Create a public client for the current chain
+        // Map chain.id to key for getUsdcTokenContract
+        let chainKey: keyof typeof import("@/lib/contracts/USDCToken").USDC_TOKEN_ADDRESSES =
+          "base";
+        if (chain.id === 8453) chainKey = "base";
+        else if (chain.id === 10) chainKey = "optimism";
+        // Add more mappings as needed
+
         const publicClient = createPublicClient({
-          chain: baseSepolia, // You can make this dynamic based on the current chain
+          chain,
           transport: http(),
         });
 
@@ -72,24 +78,25 @@ export function TokenBalance() {
         });
         setEthBalance(ethBalance);
 
-        // Get TT balance
-        const ttBalance = (await publicClient.readContract({
-          address: testTokenContract.address,
-          abi: testTokenContract.abi,
+        // Get USDC balance
+        const usdcTokenContract = getUsdcTokenContract(chainKey);
+        const usdcBalance = (await publicClient.readContract({
+          address: usdcTokenContract.address,
+          abi: usdcTokenContract.abi,
           functionName: "balanceOf",
           args: [address as `0x${string}`],
         })) as bigint;
-        setTtBalance(ttBalance);
+        setUsdcBalance(usdcBalance);
       } catch (error) {
         console.error("Error fetching balances:", error);
         setEthBalance(null);
-        setTtBalance(null);
+        setUsdcBalance(null);
       } finally {
         setIsLoading(false);
       }
     }
     getBalances();
-  }, [client, user]);
+  }, [client, user, chain]);
 
   if (isLoading) {
     return (
@@ -103,7 +110,7 @@ export function TokenBalance() {
             <Skeleton className="h-5 w-16" />
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-sm">TT</span>
+            <span className="text-sm">USDC</span>
             <Skeleton className="h-5 w-16" />
           </div>
         </CardContent>
@@ -126,9 +133,11 @@ export function TokenBalance() {
           </span>
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-sm">TT</span>
+          <span className="text-sm">USDC</span>
           <span className="text-sm font-medium">
-            {ttBalance ? formatBalance(formatEther(ttBalance), "TT") : "0 TT"}
+            {usdcBalance
+              ? formatBalance(formatEther(usdcBalance), "USDC")
+              : "0 USDC"}
           </span>
         </div>
       </CardContent>

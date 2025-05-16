@@ -1,9 +1,6 @@
 import { createSafeActionClient } from "next-safe-action";
 import { z } from "zod";
-import {
-  client,
-  client as snapshotClient,
-} from "@/lib/sdk/snapshot/snapshot-client";
+import { client } from "@/lib/sdk/snapshot/snapshot-client";
 import type { ActionResponse } from "@/lib/types/actions";
 import { createModularAccountClient } from "@/lib/sdk/accountKit/modularAccountClient";
 import { base } from "@account-kit/infra"; // or your target chain

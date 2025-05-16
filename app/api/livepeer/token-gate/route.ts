@@ -2,7 +2,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createPublicClient, Address } from "viem";
-import { alchemy, baseSepolia, base, optimism } from "@account-kit/infra";
+import { alchemy, base, optimism } from "@account-kit/infra";
 import type { Chain } from "viem";
 import { generateAccessKey, validateAccessKey } from "@/lib/access-key";
 import { getSmartAccountClient } from "@account-kit/core";
@@ -26,7 +26,6 @@ const erc1155ABI = [
 const chainMapping: Record<number, Chain> = {
   8453: base,
   10: optimism,
-  84532: baseSepolia,
 };
 
 export interface WebhookPayload {

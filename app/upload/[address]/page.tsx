@@ -1,5 +1,3 @@
-"use client";
-
 import { MembershipGuard } from "@/components/auth/MembershipGuard";
 import { ProfilePageGuard } from "@/components/UserProfile/UserProfile";
 import HookMultiStepForm from "@/components/Videos/Upload";

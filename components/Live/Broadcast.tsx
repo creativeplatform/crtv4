@@ -18,21 +18,56 @@ import {
   StopScreenshareIcon,
 } from "@livepeer/react/assets";
 import { getIngest } from "@livepeer/react/external";
-import { fullLivepeer } from "@/lib/sdk/livepeer/fullClient";
 import { toast } from "sonner";
-import { Profile, Type } from "livepeer/models/components";
 import * as Popover from "@radix-ui/react-popover";
 import { CheckIcon, ChevronDownIcon, XIcon } from "lucide-react";
 import { useEffect, useRef } from "react";
-import { MultistreamTargetsForm } from "./multicast/MultistreamTargetsForm";
-import { MultistreamTargetsList } from "./multicast/MultistreamTargetList";
 import {
   listMultistreamTargets,
   MultistreamTarget,
 } from "@/services/video-assets";
+import { MultistreamTargetsList } from "./multicast/MultistreamTargetList";
+import { MultistreamTargetsForm } from "./multicast/MultistreamTargetsForm";
 
 interface BroadcastProps {
   streamKey: string | null;
+}
+
+interface StreamProfile {
+  name: string;
+  width: number;
+  height: number;
+  bitrate: number;
+  fps: number;
+  fpsDen: number;
+  quality: number;
+  gop: string;
+  profile: string;
+}
+
+interface CreateStreamProxyParams {
+  name: string;
+  profiles: StreamProfile[];
+  record: boolean;
+  playbackPolicy: any;
+  multistream: any;
+}
+
+export async function createStreamViaProxy(params: CreateStreamProxyParams) {
+  const { name, profiles, record, playbackPolicy, multistream } = params;
+  const res = await fetch("/api/livepeer/livepeer-proxy", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name,
+      profiles,
+      record,
+      playbackPolicy,
+      multistream,
+    }),
+  });
+  if (!res.ok) throw new Error("Failed to create stream");
+  return res.json();
 }
 
 function BroadcastWithControls({ streamKey }: BroadcastProps) {
@@ -44,31 +79,57 @@ function BroadcastWithControls({ streamKey }: BroadcastProps) {
     MultistreamTarget[]
   >([]);
   const [isLoadingTargets, setIsLoadingTargets] = React.useState(false);
+  const streamCreationInitiatedRef = React.useRef(false);
 
   React.useEffect(() => {
     const createStream = async () => {
-      if (!streamKey && !isCreatingStream) {
+      if (
+        !streamKey &&
+        !isCreatingStream &&
+        !streamCreationInitiatedRef.current
+      ) {
+        streamCreationInitiatedRef.current = true;
         setIsCreatingStream(true);
         try {
-          const result = await fullLivepeer.stream.create({
+          const result = await createStreamViaProxy({
             name: `Broadcast-${Date.now()}`,
             profiles: [
               {
-                width: 854,
                 name: "480p",
+                width: 854,
                 height: 480,
-                bitrate: 1500000,
+                bitrate: 1_000_000,
                 fps: 30,
                 fpsDen: 1,
                 quality: 23,
                 gop: "2",
-                profile: Profile.H264Baseline,
+                profile: "H264Baseline",
+              },
+              {
+                name: "720p",
+                width: 1280,
+                height: 720,
+                bitrate: 2_500_000,
+                fps: 30,
+                fpsDen: 1,
+                quality: 23,
+                gop: "2",
+                profile: "H264Baseline",
+              },
+              {
+                name: "1080p",
+                width: 1920,
+                height: 1080,
+                bitrate: 4_500_000,
+                fps: 30,
+                fpsDen: 1,
+                quality: 23,
+                gop: "2",
+                profile: "H264Baseline",
               },
             ],
             record: false,
-            playbackPolicy: {
-              type: Type.Jwt,
-            },
+            playbackPolicy: { type: "jwt" },
             multistream: {
               targets: multistreamTargets
                 .filter((t) => t.id)
@@ -217,6 +278,7 @@ function BroadcastWithControls({ streamKey }: BroadcastProps) {
                   <Settings
                     ref={settingsButtonRef}
                     className="h-5 w-5 flex-shrink-0 transition hover:scale-110"
+                    streamId={streamData?.id || ""}
                   >
                     <SettingsIcon className="h-full w-full text-white" />
                   </Settings>
@@ -334,9 +396,36 @@ export const BroadcastLoading = ({
 
 export const Settings = React.forwardRef(
   (
-    { className }: { className?: string; children?: React.ReactNode },
+    {
+      className,
+      children,
+      streamId,
+    }: { className?: string; children?: React.ReactNode; streamId: string },
     ref: React.Ref<HTMLButtonElement> | undefined
   ) => {
+    const [multistreamTargets, setMultistreamTargets] = React.useState<
+      MultistreamTarget[]
+    >([]);
+    const [isLoadingTargets, setIsLoadingTargets] = React.useState(false);
+
+    React.useEffect(() => {
+      async function fetchTargets() {
+        setIsLoadingTargets(true);
+        const result = await listMultistreamTargets();
+        setIsLoadingTargets(false);
+        if (result.targets) setMultistreamTargets(result.targets);
+      }
+      fetchTargets();
+    }, []);
+
+    function handleTargetAdded(target: MultistreamTarget) {
+      setMultistreamTargets((prev) => [...prev, target]);
+    }
+
+    function handleTargetRemoved(id: string) {
+      setMultistreamTargets((prev) => prev.filter((t) => t.id !== id));
+    }
+
     return (
       <Popover.Root>
         <Popover.Trigger ref={ref} asChild>
@@ -388,6 +477,34 @@ export const Settings = React.forwardRef(
                   type="audioinput"
                 />
               </div>
+
+              <div className="mt-4 border-t border-white/20 pt-3">
+                <p className="mb-2 text-sm font-semibold text-white">
+                  Multistream Targets
+                </p>
+                <MultistreamTargetsForm
+                  streamId={streamId}
+                  onTargetAdded={handleTargetAdded}
+                />
+                {isLoadingTargets ? (
+                  <div className="text-xs text-white mt-2">
+                    Loading targets...
+                  </div>
+                ) : (
+                  <>
+                    <MultistreamTargetsList
+                      targets={multistreamTargets}
+                      onTargetRemoved={handleTargetRemoved}
+                    />
+                    {multistreamTargets.length === 0 && (
+                      <div className="text-xs text-gray-400 mt-2">
+                        No multistream targets configured. Your stream will only
+                        be available on this platform.
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
             <Popover.Close className="absolute right-2 top-2 inline-flex h-4 w-4 items-center justify-center rounded-full outline-none">
               <XIcon className="h-3 w-3 text-white" />
@@ -401,63 +518,67 @@ export const Settings = React.forwardRef(
 );
 
 export const SourceSelectComposed = React.forwardRef(
-  (
+  function SourceSelectComposed(
     {
       name,
       type,
       className,
     }: { name: string; type: "audioinput" | "videoinput"; className?: string },
     ref: React.Ref<HTMLButtonElement> | undefined
-  ) => (
-    <Broadcast.SourceSelect name={name} type={type}>
-      {(devices) =>
-        devices ? (
-          <>
-            <Broadcast.SelectTrigger
-              ref={ref}
-              className={cn(
-                `flex h-8 w-full items-center justify-between gap-1 overflow-hidden rounded-sm 
-                bg-gray-900/80 px-2 py-1.5 text-sm leading-none text-white outline-none outline-1 outline-white/50 
-                hover:bg-gray-800/80 disabled:cursor-not-allowed disabled:opacity-70`,
-                className
-              )}
-              aria-label={type === "audioinput" ? "Audio input" : "Video input"}
-            >
-              <Broadcast.SelectValue
-                placeholder={
-                  type === "audioinput"
-                    ? "Select an audio input"
-                    : "Select a video input"
+  ) {
+    return (
+      <Broadcast.SourceSelect name={name} type={type}>
+        {(devices) =>
+          devices ? (
+            <>
+              <Broadcast.SelectTrigger
+                ref={ref}
+                className={cn(
+                  `flex h-8 w-full items-center justify-between gap-1 overflow-hidden rounded-sm \
+                  bg-gray-900/80 px-2 py-1.5 text-sm leading-none text-white outline-none outline-1 outline-white/50 \
+                  hover:bg-gray-800/80 disabled:cursor-not-allowed disabled:opacity-70`,
+                  className
+                )}
+                aria-label={
+                  type === "audioinput" ? "Audio input" : "Video input"
                 }
-                className="text-white"
-              />
-              <Broadcast.SelectIcon>
-                <ChevronDownIcon className="h-4 w-4 text-white" />
-              </Broadcast.SelectIcon>
-            </Broadcast.SelectTrigger>
-            <Broadcast.SelectPortal>
-              <Broadcast.SelectContent className="overflow-hidden rounded-sm border border-white/20 bg-gray-900">
-                <Broadcast.SelectViewport className="p-2">
-                  <Broadcast.SelectGroup>
-                    {devices?.map((device) => (
-                      <RateSelectItem
-                        key={device.deviceId}
-                        value={device.deviceId}
-                      >
-                        {device.friendlyName}
-                      </RateSelectItem>
-                    ))}
-                  </Broadcast.SelectGroup>
-                </Broadcast.SelectViewport>
-              </Broadcast.SelectContent>
-            </Broadcast.SelectPortal>
-          </>
-        ) : (
-          <span className="text-xs text-white">Error fetching devices</span>
-        )
-      }
-    </Broadcast.SourceSelect>
-  )
+              >
+                <Broadcast.SelectValue
+                  placeholder={
+                    type === "audioinput"
+                      ? "Select an audio input"
+                      : "Select a video input"
+                  }
+                  className="text-white"
+                />
+                <Broadcast.SelectIcon>
+                  <ChevronDownIcon className="h-4 w-4 text-white" />
+                </Broadcast.SelectIcon>
+              </Broadcast.SelectTrigger>
+              <Broadcast.SelectPortal>
+                <Broadcast.SelectContent className="overflow-hidden rounded-sm border border-white/20 bg-gray-900">
+                  <Broadcast.SelectViewport className="p-2">
+                    <Broadcast.SelectGroup>
+                      {devices?.map((device) => (
+                        <RateSelectItem
+                          key={device.deviceId}
+                          value={device.deviceId}
+                        >
+                          {device.friendlyName}
+                        </RateSelectItem>
+                      ))}
+                    </Broadcast.SelectGroup>
+                  </Broadcast.SelectViewport>
+                </Broadcast.SelectContent>
+              </Broadcast.SelectPortal>
+            </>
+          ) : (
+            <span className="text-xs text-white">Error fetching devices</span>
+          )
+        }
+      </Broadcast.SourceSelect>
+    );
+  }
 );
 
 SourceSelectComposed.displayName = "SourceSelectComposed";

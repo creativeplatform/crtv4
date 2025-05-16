@@ -4,12 +4,6 @@ import { NextPage } from "next";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useContext } from "react";
-import {
-  createAlchemyPublicRpcClient,
-  alchemy,
-  base,
-  baseSepolia,
-} from "@account-kit/infra";
 import { useUser } from "@account-kit/react";
 import { userToAccount } from "@/lib/types/account";
 import { ListUploadedAssets } from "@/components/UserProfile/list-uploaded-assets/ListUploadedAssets";
@@ -88,14 +82,6 @@ const ProfilePage: NextPage = () => {
   const validMembership = (
     membershipDetails as MembershipDetails[] | undefined
   )?.find((m: MembershipDetails) => m.isValid);
-
-  // Setup Alchemy clients
-  const publicClient = createAlchemyPublicRpcClient({
-    transport: alchemy({
-      apiKey: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY as string,
-    }),
-    chain: baseSepolia,
-  });
 
   if (loading) return <div>Loading...</div>;
   if (serverMembershipError)

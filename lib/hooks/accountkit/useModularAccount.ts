@@ -1,5 +1,5 @@
 import { useSmartAccountClient, useUser, useChain } from "@account-kit/react";
-import { baseSepolia } from "@account-kit/infra";
+import { base } from "@account-kit/infra";
 import { modularAccountFactoryAddresses } from "@/lib/utils/modularAccount";
 import { Chain } from "viem";
 
@@ -21,7 +21,7 @@ export default function useModularAccount(props?: UseModularAccountProps) {
   const user = useUser();
 
   // Determine which chain to use
-  const chain = customChain || currentChain || baseSepolia;
+  const chain = customChain || currentChain || base;
 
   // Get the factory address for the current chain
   const factoryAddress = modularAccountFactoryAddresses[chain.id];
@@ -46,7 +46,7 @@ export default function useModularAccount(props?: UseModularAccountProps) {
     if (!smartAccountClient) return null;
 
     try {
-      return smartAccountClient.account.address;
+      return address as string;
     } catch (err) {
       console.error("Error getting account address:", err);
       return null;

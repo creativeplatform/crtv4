@@ -39,13 +39,7 @@ import {
 import type { User as AccountUser } from "@account-kit/signer";
 import useModularAccount from "@/lib/hooks/accountkit/useModularAccount";
 import { createPublicClient, http } from "viem";
-import {
-  alchemy,
-  mainnet,
-  base,
-  baseSepolia,
-  optimism,
-} from "@account-kit/infra";
+import { alchemy, mainnet, base, optimism } from "@account-kit/infra";
 import { ArrowBigDown, ArrowBigUp } from "lucide-react";
 import WertButton from "./wallet/buy/fund-button";
 import { TokenBalance } from "./wallet/balance/TokenBalance";
@@ -53,6 +47,7 @@ import type { Chain as ViemChain } from "viem/chains";
 import { AccountDropdown } from "@/components/account-dropdown/AccountDropdown";
 import { useMembershipVerification } from "@/lib/hooks/unlock/useMembershipVerification";
 import { MembershipSection } from "./account-dropdown/MembershipSection";
+import { ChainSelect } from "@/components/ui/select";
 
 type UseUserResult = (AccountUser & { type: "eoa" | "sca" }) | null;
 
@@ -117,8 +112,6 @@ const getChainGradient = (chain: ViemChain) => {
   switch (chain.id) {
     case base.id:
       return "from-[#0052FF] to-[#0052FF]";
-    case baseSepolia.id:
-      return "from-[#0052FF] to-[#0052FF]";
     case optimism.id:
       return "from-[#FF0420] to-[#FF0420]";
     default:
@@ -130,8 +123,6 @@ const getChainName = (chain: ViemChain) => {
   switch (chain.id) {
     case base.id:
       return "Base";
-    case baseSepolia.id:
-      return "Base Sepolia";
     case optimism.id:
       return "Optimism";
     default:
@@ -144,8 +135,6 @@ const getChainLogo = (chain: ViemChain) => {
   switch (chain.id) {
     case base.id:
       return "/images/chains/base.svg";
-    case baseSepolia.id:
-      return "/images/chains/base-sepolia.svg";
     case optimism.id:
       return "/images/chains/optimism.svg";
     default:
@@ -413,38 +402,6 @@ export default function Navbar() {
     }
   };
 
-  // Add this function to handle chain switching
-  const handleChainSwitch = async (
-    newChain: ViemChain,
-    chainName: string
-  ): Promise<void> => {
-    try {
-      // Check if already switching chains
-      if (isSettingChain) {
-        toast.warning("Chain switch already in progress");
-        return;
-      }
-
-      // Check if already on the selected chain
-      if (currentChain.id === newChain.id) {
-        toast.info(`Already connected to ${chainName}`);
-        return;
-      }
-
-      console.log("Switching to chain:", {
-        chainId: newChain.id,
-        chainName,
-      });
-
-      setChain({ chain: newChain });
-      toast.success(`Switched to ${chainName}`);
-      setCurrentChainName(chainName);
-    } catch (error) {
-      console.error("Error switching chain:", error);
-      toast.error(`Failed to switch to ${chainName}`);
-    }
-  };
-
   return (
     <header className={headerClassName}>
       <div className="container mx-auto px-4 sm:px-6">
@@ -583,40 +540,7 @@ export default function Navbar() {
                     {/* Add Chain Selector here */}
                     <div className="mt-4">
                       <p className="text-sm font-medium mb-2">Network</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {[base, optimism, baseSepolia].map((chain) => (
-                          <Button
-                            key={chain.id}
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                              handleChainSwitch(chain, getChainName(chain))
-                            }
-                            disabled={
-                              isSettingChain || currentChain.id === chain.id
-                            }
-                            className={`flex items-center justify-start space-x-2 ${
-                              currentChain.id === chain.id
-                                ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-                                : ""
-                            }`}
-                          >
-                            <Image
-                              src={getChainLogo(chain)}
-                              alt={chain.name}
-                              width={20}
-                              height={20}
-                              className="rounded-full"
-                            />
-                            <span className="text-xs">
-                              {getChainName(chain)}
-                            </span>
-                            {currentChain.id === chain.id && (
-                              <NetworkStatus isConnected={isNetworkConnected} />
-                            )}
-                          </Button>
-                        ))}
-                      </div>
+                      <ChainSelect className="w-full" />
                     </div>
 
                     <div className="grid grid-cols-2 gap-2">

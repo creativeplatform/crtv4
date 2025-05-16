@@ -31,7 +31,7 @@ import {
   useSmartAccountClient,
   useSendUserOperation,
 } from "@account-kit/react";
-import { base, baseSepolia, optimism } from "@account-kit/infra";
+import { base, optimism } from "@account-kit/infra";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -101,11 +101,11 @@ import { shortenAddress } from "@/lib/utils/utils";
 import Link from "next/link";
 import { useMembershipVerification } from "@/lib/hooks/unlock/useMembershipVerification";
 import { Skeleton } from "@/components/ui/skeleton";
+import { chains } from "@/config";
 
 const chainIconMap: Record<number, string> = {
   [base.id]: "/images/chains/base.svg",
   [optimism.id]: "/images/chains/optimism.svg",
-  [baseSepolia.id]: "/images/chains/base-sepolia.svg",
 };
 
 function getChainIcon(chain: { id: number }) {
@@ -808,12 +808,12 @@ export function AccountDropdown() {
               Switch Network
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            {[base, optimism, baseSepolia].map((chain) => (
-              <Tooltip key={chain.id}>
+            {chains.map((dropdownChain) => (
+              <Tooltip key={dropdownChain.id}>
                 <TooltipTrigger asChild>
                   <DropdownMenuItem
-                    onClick={() => handleChainSwitch(chain)}
-                    disabled={isSettingChain || chain.id === chain.id}
+                    onClick={() => handleChainSwitch(dropdownChain)}
+                    disabled={isSettingChain || chain.id === dropdownChain.id}
                     className={`
                       flex items-center cursor-pointer
                       hover:bg-gray-100 dark:hover:bg-gray-800
@@ -821,17 +821,17 @@ export function AccountDropdown() {
                     `}
                   >
                     <Image
-                      src={getChainIcon(chain)}
-                      alt={`${chain.name} network icon`}
+                      src={getChainIcon(dropdownChain)}
+                      alt={`${dropdownChain.name} network icon`}
                       width={32}
                       height={32}
                       className="mr-2 rounded-full"
                     />
-                    {chain.name}
+                    {dropdownChain.name}
                   </DropdownMenuItem>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <pre className="text-xs">{chain.name}</pre>
+                  <pre className="text-xs">{dropdownChain.name}</pre>
                 </TooltipContent>
               </Tooltip>
             ))}

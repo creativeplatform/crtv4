@@ -9,13 +9,13 @@ import {
 } from "@account-kit/react";
 
 // Validate required environment variables
-const ALCHEMY_API_KEY = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY;
+const NEXT_PUBLIC_ALCHEMY_API_KEY = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY;
 const CERAMIC_NODE_URL = process.env.NEXT_PUBLIC_CERAMIC_NODE_URL;
 const ORBIS_NODE_URL = process.env.NEXT_PUBLIC_ORBIS_NODE_URL;
 const ORBIS_ENVIRONMENT_ID = process.env.NEXT_PUBLIC_ORBIS_ENVIRONMENT_ID;
 
 if (
-  !ALCHEMY_API_KEY ||
+  !NEXT_PUBLIC_ALCHEMY_API_KEY ||
   !CERAMIC_NODE_URL ||
   !ORBIS_NODE_URL ||
   !ORBIS_ENVIRONMENT_ID

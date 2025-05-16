@@ -3,6 +3,7 @@
 import React from "react";
 import HeroSection from "./HeroSection";
 import { TopChart } from "./TopChart";
+// import FeaturedVideo from './Featured';
 import { TopVideos } from "./TopVideos";
 
 const NonLoggedInView: React.FC = () => {
@@ -10,6 +11,7 @@ const NonLoggedInView: React.FC = () => {
     <div>
       <HeroSection />
       <TopChart />
+      {/* <FeaturedVideo /> */}
       <TopVideos />
     </div>
   );

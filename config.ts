@@ -4,7 +4,7 @@ import {
   type AlchemyAccountsUIConfig,
   type CreateConfigProps,
 } from "@account-kit/react";
-import { alchemy, baseSepolia, base, optimism } from "@account-kit/infra";
+import { alchemy, base, optimism } from "@account-kit/infra";
 import { QueryClient } from "@tanstack/react-query";
 import { modularAccountFactoryAddresses } from "./lib/utils/modularAccount";
 import { SITE_TOPIC_LOGO } from "./context/context";
@@ -12,10 +12,10 @@ import Image from "next/image";
 import React from "react";
 
 // Define the chains we want to support
-const chains = [baseSepolia, base, optimism];
+export const chains = [base, optimism];
 
 // Default chain for initial connection
-const defaultChain = baseSepolia;
+const defaultChain = base;
 
 // Create transport
 const transport = alchemy({

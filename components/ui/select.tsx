@@ -3,6 +3,9 @@
 import * as React from "react";
 import * as SelectPrimitive from "@radix-ui/react-select";
 import { Check, ChevronDown, ChevronUp } from "lucide-react";
+import { useChain } from "@account-kit/react";
+import { base, optimism } from "@account-kit/infra";
+import Image from "next/image";
 
 import { cn } from "@/lib/utils/utils";
 
@@ -170,6 +173,54 @@ const SelectSeparator = React.forwardRef<
 ));
 SelectSeparator.displayName = SelectPrimitive.Separator.displayName;
 
+function ChainSelect({ className }: { className?: string }) {
+  const { chain, setChain, isSettingChain } = useChain();
+  const supportedChains = [base, optimism];
+
+  function handleChange(chainId: string) {
+    const selected = supportedChains.find((c) => c.id.toString() === chainId);
+    if (!selected || selected.id === chain.id || isSettingChain) return;
+    setChain({ chain: selected });
+  }
+
+  return (
+    <Select value={chain.id.toString()} onValueChange={handleChange}>
+      <SelectTrigger className={className} aria-label="Select network">
+        <div className="flex items-center gap-2">
+          <Image
+            src={getChainIcon(chain.id)}
+            alt={chain.name}
+            width={20}
+            height={20}
+            className="rounded-full"
+          />
+          <span>{chain.name}</span>
+        </div>
+      </SelectTrigger>
+      <SelectContent>
+        {supportedChains.map((c) => (
+          <SelectItem
+            key={c.id}
+            value={c.id.toString()}
+            disabled={c.id === chain.id || isSettingChain}
+          >
+            <div className="flex items-center gap-2">
+              <Image
+                src={getChainIcon(c.id)}
+                alt={c.name}
+                width={20}
+                height={20}
+                className="rounded-full"
+              />
+              <span>{c.name}</span>
+            </div>
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
 export {
   Select,
   SelectGroup,
@@ -181,4 +232,17 @@ export {
   SelectSeparator,
   SelectScrollUpButton,
   SelectScrollDownButton,
+  ChainSelect,
 };
+
+// Static content and helpers
+function getChainIcon(chainId: number): string {
+  switch (chainId) {
+    case base.id:
+      return "/images/chains/base.svg";
+    case optimism.id:
+      return "/images/chains/optimism.svg";
+    default:
+      return "/images/chains/default-chain.svg";
+  }
+}

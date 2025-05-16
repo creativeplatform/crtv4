@@ -177,7 +177,7 @@ yarn install
 
 ```
 # Create a .env.local file with the following variables
-NEXT_PUBLIC_ALCHEMY_API_KEY=your_alchemy_api_key
+NEXT_PUBLIC_ALCHEMY_API_KEY=your_NEXT_PUBLIC_ALCHEMY_API_KEY
 LIVEPEER_API_KEY=your_livepeer_api_key
 LIVEPEER_WEBHOOK_ID=your_livepeer_webhook_id
 # Add other required environment variables
