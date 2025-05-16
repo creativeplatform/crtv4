@@ -894,8 +894,8 @@ export function AccountDropdown() {
                           dark:text-green-400 font-semibold border-t border-gray-200 \
                           dark:border-gray-700 mt-2"
                       >
-                        <Plus className="mr-2 h-4 w-4 text-green-500" /> Start A
-                        Vote
+                        <Plus className="mr-2 h-4 w-4 text-green-500" /> Create
+                        Proposal
                       </DropdownMenuItem>
                     </Link>
                   </>

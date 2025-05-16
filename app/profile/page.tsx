@@ -2,7 +2,6 @@
 import { useEffect } from "react";
 import { useUser } from "@account-kit/react";
 import { useRouter } from "next/navigation";
-import { Skeleton } from "@/components/ui/skeleton";
 
 function ProfileRedirect() {
   const router = useRouter();
@@ -14,7 +13,7 @@ function ProfileRedirect() {
 
   return (
     <div className="flex items-center justify-center h-screen text-lg font-medium">
-      <Skeleton className="w-full h-full" />
+      Loading profile...
     </div>
   );
 }

@@ -393,9 +393,32 @@ export const BroadcastLoading = ({
 
 export const Settings = React.forwardRef(
   (
-    { className }: { className?: string; children?: React.ReactNode },
+    { className, children }: { className?: string; children?: React.ReactNode },
     ref: React.Ref<HTMLButtonElement> | undefined
   ) => {
+    const [multistreamTargets, setMultistreamTargets] = React.useState<
+      MultistreamTarget[]
+    >([]);
+    const [isLoadingTargets, setIsLoadingTargets] = React.useState(false);
+
+    React.useEffect(() => {
+      async function fetchTargets() {
+        setIsLoadingTargets(true);
+        const result = await listMultistreamTargets();
+        setIsLoadingTargets(false);
+        if (result.targets) setMultistreamTargets(result.targets);
+      }
+      fetchTargets();
+    }, []);
+
+    function handleTargetAdded(target: MultistreamTarget) {
+      setMultistreamTargets((prev) => [...prev, target]);
+    }
+
+    function handleTargetRemoved(id: string) {
+      setMultistreamTargets((prev) => prev.filter((t) => t.id !== id));
+    }
+
     return (
       <Popover.Root>
         <Popover.Trigger ref={ref} asChild>
@@ -446,6 +469,31 @@ export const Settings = React.forwardRef(
                   name="microphoneSource"
                   type="audioinput"
                 />
+              </div>
+
+              <div className="mt-4 border-t border-white/20 pt-3">
+                <p className="mb-2 text-sm font-semibold text-white">
+                  Multistream Targets
+                </p>
+                <MultistreamTargetsForm onTargetAdded={handleTargetAdded} />
+                {isLoadingTargets ? (
+                  <div className="text-xs text-white mt-2">
+                    Loading targets...
+                  </div>
+                ) : (
+                  <>
+                    <MultistreamTargetsList
+                      targets={multistreamTargets}
+                      onTargetRemoved={handleTargetRemoved}
+                    />
+                    {multistreamTargets.length === 0 && (
+                      <div className="text-xs text-gray-400 mt-2">
+                        No multistream targets configured. Your stream will only
+                        be available on this platform.
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             </div>
             <Popover.Close className="absolute right-2 top-2 inline-flex h-4 w-4 items-center justify-center rounded-full outline-none">
