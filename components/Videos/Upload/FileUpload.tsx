@@ -2,7 +2,10 @@
 import React, { useState } from "react";
 import { toast } from "sonner";
 import { CopyIcon } from "lucide-react";
-import { getLivepeerUploadUrl } from "@/app/api/livepeer/assetUploadActions";
+import {
+  getLivepeerUploadUrl,
+  getLivepeerAsset,
+} from "@/app/api/livepeer/assetUploadActions";
 import * as tus from "tus-js-client";
 import PreviewVideo from "./PreviewVideo";
 import { useUser } from "@account-kit/react";
@@ -16,6 +19,7 @@ import {
 import JsGoogleTranslateFree from "@kreisler/js-google-translate-free";
 import { getLivepeerAudioToText } from "@/app/api/livepeer/audioToText";
 import Link from "next/link";
+import { updateVideoAsset } from "@/services/video-assets";
 
 const truncateUri = (uri: string): string => {
   if (uri.length <= 30) return uri;
@@ -43,8 +47,7 @@ const translateText = async (
   language: string
 ): Promise<string> => {
   try {
-    const baseUrl =
-      process.env.NEXT_PUBLIC_THIRDWEB_AUTH_DOMAIN || "http://localhost:3000";
+    const baseUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:3000";
     const res = await fetch(`${baseUrl}/api/livepeer/subtitles/translation`, {
       method: "POST",
       body: JSON.stringify({
@@ -129,6 +132,21 @@ async function translateSubtitles(data: {
     );
 }
 
+async function pollForMetadataUri(
+  assetId: string,
+  maxAttempts = 20,
+  interval = 5000
+) {
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const asset = await getLivepeerAsset(assetId);
+    const metadataUri = asset?.storage?.ipfs?.nftMetadata?.url;
+    const isReady = asset?.status?.phase === "ready";
+    if (metadataUri && isReady) return metadataUri;
+    await new Promise((res) => setTimeout(res, interval));
+  }
+  throw new Error("Timed out waiting for metadata_uri");
+}
+
 const FileUpload: React.FC<FileUploadProps> = ({
   onFileSelect,
   onFileUploaded,
@@ -151,6 +169,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
     useState<boolean>(false);
 
   const [livepeerAsset, setLivepeerAsset] = useState<any>();
+  const [isPolling, setIsPolling] = useState(false);
 
   const user = useUser();
   const account = userToAccount(user);
@@ -262,6 +281,27 @@ const FileUpload: React.FC<FileUploadProps> = ({
       toast.error("Failed to process audio to text");
     }
   };
+
+  async function handlePostUploadDbUpdate(assetId: string, dbAssetId: number) {
+    setIsPolling(true);
+    try {
+      const metadataUri = await pollForMetadataUri(assetId);
+      await updateVideoAsset(dbAssetId, {
+        metadata_uri: metadataUri,
+        thumbnailUri: "", // update as needed
+        status: "ready",
+        max_supply: null,
+        price: null,
+        royalty_percentage: null,
+      });
+      toast.success("Database updated with metadata URI!");
+    } catch (err) {
+      toast.error("Failed to update database with metadata URI");
+      console.error(err);
+    } finally {
+      setIsPolling(false);
+    }
+  }
 
   if (!account) {
     return (
@@ -441,6 +481,12 @@ const FileUpload: React.FC<FileUploadProps> = ({
             </Button>
           )}
         </div>
+
+        {isPolling && (
+          <div className="text-center text-sm text-gray-500 mt-4">
+            Processing video and syncing metadata...
+          </div>
+        )}
       </div>
     </div>
   );
