@@ -33,12 +33,19 @@ interface FormValues {
   selectedImage: string;
 }
 
-type CreateThumbnailFormProps = {
+interface CreateThumbnailFormProps {
   onSelectThumbnailImages: (imageUrl: string) => void;
-};
+  onNFTConfigChange?: (nftConfig: {
+    isMintable: boolean;
+    maxSupply: number;
+    price: number;
+    royaltyPercentage: number;
+  }) => void;
+}
 
 const CreateThumbnailForm = ({
   onSelectThumbnailImages,
+  onNFTConfigChange,
 }: CreateThumbnailFormProps) => {
   const {
     handleSubmit,
@@ -112,9 +119,16 @@ const CreateThumbnailForm = ({
     console.log("Updated imagesUrl state:", imagesUrl);
   }, [imagesUrl]);
 
+  // Watch NFT config and notify parent on change
+  useEffect(() => {
+    if (onNFTConfigChange) {
+      onNFTConfigChange(watch("nftConfig"));
+    }
+  }, [watch("nftConfig"), onNFTConfigChange]);
+
   const handleSelectionChange = (value: string) => {
     setSelectedImage(value);
-    onSelectThumbnailImages(value);
+    onSelectThumbnailImages(value); // Only update selection, do not trigger navigation
   };
 
   const radioValue = watch("selectedImage") ?? "";
@@ -183,6 +197,62 @@ const CreateThumbnailForm = ({
       />
       {errors.prompt && <p className="text-red-500">{errors.prompt.message}</p>}
 
+      {/* Move Generate button and image results here */}
+      <Button type="submit" disabled={isSubmitting}>
+        <SparklesIcon className="mr-1 h-4 w-4" />
+        {isSubmitting ? "Generating..." : "Generate"}
+      </Button>
+
+      {errors["root"] && (
+        <p className="text-red-500">
+          Sorry, we couldn&rsquo;t generate your image from text. Please try
+          again.
+        </p>
+      )}
+
+      {/* Render Skeletons while loading */}
+      {loading ? (
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, idx) => (
+            <Skeleton key={idx} className="rounded-md w-full h-[200px]" />
+          ))}
+        </div>
+      ) : (
+        <RadioGroup
+          value={radioValue}
+          onValueChange={(value) => {
+            setValue("selectedImage", value);
+            handleSelectionChange(value);
+          }}
+          className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4"
+        >
+          {imagesUrl.length === 0 && (
+            <p className="col-span-full text-center text-gray-500">
+              No images generated yet.
+            </p>
+          )}
+          {imagesUrl.map((img, idx) => (
+            <div key={idx} className="flex flex-col items-center">
+              <RadioGroupItem
+                value={img.url}
+                id={`thumbnail_checkbox_${idx}`}
+                className="mb-2"
+              />
+              <Label htmlFor={`thumbnail_checkbox_${idx}`}>
+                <Image
+                  src={img.url}
+                  alt={`Thumbnail ${idx + 1}`}
+                  width={200}
+                  height={200}
+                  className="rounded-md border object-cover"
+                />
+              </Label>
+            </div>
+          ))}
+        </RadioGroup>
+      )}
+
+      {/* NFT Configuration section moved below */}
       <div className="mt-8 space-y-4 border-t pt-4">
         <h3 className="text-lg font-semibold">NFT Configuration</h3>
 
@@ -277,57 +347,6 @@ const CreateThumbnailForm = ({
           </div>
         )}
       </div>
-
-      <Button type="submit" disabled={isSubmitting}>
-        <SparklesIcon className="mr-1 h-4 w-4" />
-        {isSubmitting ? "Generating..." : "Generate"}
-      </Button>
-
-      {errors["root"] && (
-        <p className="text-red-500">{errors["root"].message}</p>
-      )}
-
-      {/* Render Skeletons while loading */}
-      {loading ? (
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, idx) => (
-            <Skeleton key={idx} className="rounded-md w-full h-[200px]" />
-          ))}
-        </div>
-      ) : (
-        <RadioGroup
-          value={radioValue}
-          onValueChange={(value) => {
-            setValue("selectedImage", value);
-            handleSelectionChange(value);
-          }}
-          className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4"
-        >
-          {imagesUrl.length === 0 && (
-            <p className="col-span-full text-center text-gray-500">
-              No images generated yet.
-            </p>
-          )}
-          {imagesUrl.map((img, idx) => (
-            <div key={idx} className="flex flex-col items-center">
-              <RadioGroupItem
-                value={img.url}
-                id={`thumbnail_checkbox_${idx}`}
-                className="mb-2"
-              />
-              <Label htmlFor={`thumbnail_checkbox_${idx}`}>
-                <Image
-                  src={img.url}
-                  alt={`Thumbnail ${idx + 1}`}
-                  width={200}
-                  height={200}
-                  className="rounded-md border object-cover"
-                />
-              </Label>
-            </div>
-          ))}
-        </RadioGroup>
-      )}
     </form>
   );
 };

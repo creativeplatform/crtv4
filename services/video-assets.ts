@@ -61,6 +61,7 @@ export async function updateVideoAsset(
     max_supply: number | null;
     price: number | null;
     royalty_percentage: number | null;
+    metadata_uri?: string | null;
   }
 ) {
   const result = await sql`
@@ -70,7 +71,8 @@ export async function updateVideoAsset(
       status = ${data.status},
       max_supply = ${data.max_supply},
       price = ${data.price},
-      royalty_percentage = ${data.royalty_percentage}
+      royalty_percentage = ${data.royalty_percentage},
+      metadata_uri = ${data.metadata_uri}
     WHERE id = ${id}
     RETURNING *
   `;

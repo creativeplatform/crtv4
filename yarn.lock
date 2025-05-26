@@ -2,21 +2,21 @@
 # yarn lockfile v1
 
 
-"@aa-sdk/core@^4.14.0", "@aa-sdk/core@^4.34.0":
-  version "4.34.0"
-  resolved "https://registry.npmjs.org/@aa-sdk/core/-/core-4.34.0.tgz#d908d43f09d06c5a19f7022d4c8c14da906ee079"
-  integrity sha512-rR2Ufg6zC0Weoe6mafRtWKOniPzEcgwRJTn9IO/VPcBuCkIYk+q8DOxGEX0iE+bWTnpv5DPwRDAMLWvEN5+FDw==
+"@aa-sdk/core@^4.35.0":
+  version "4.35.0"
+  resolved "https://registry.npmjs.org/@aa-sdk/core/-/core-4.35.0.tgz#ab32b0fee722b338eff7ad2d3ad1675b2711ff38"
+  integrity sha512-qqVJ9vWa1sVvbkFy2nsFJdwprPjgYm9UeDV6IloM/l6e6aI1PHcgdHhFgbu0WzM3hAb1tWDbzC6f2jQT3RU7ew==
   dependencies:
     abitype "^0.8.3"
     eventemitter3 "^5.0.1"
     zod "^3.22.4"
 
-"@aa-sdk/ethers@^4.27.0":
-  version "4.34.0"
-  resolved "https://registry.npmjs.org/@aa-sdk/ethers/-/ethers-4.34.0.tgz#939fe0449ff2e3941ff5f402dc42869b6d7266b9"
-  integrity sha512-9NDI7Ewh9++r2CQsQ3z4+enkPclRqzj7djQOwwDuLtTTV4rebeq800Oc/97kzjpbRclg/ZqbyNYk3YzxcHxJRg==
+"@aa-sdk/ethers@^4.35.0":
+  version "4.35.0"
+  resolved "https://registry.npmjs.org/@aa-sdk/ethers/-/ethers-4.35.0.tgz#63b144d4974bdb5bc8c29902ee02594011843057"
+  integrity sha512-FwqV6qjBQFKU8XZueDdu5iAtMA+VpvdhJqFtUkmwfpm5yWARzepD0nPs2i+/b29Ux+0bFkzIOJL3WTZILyzV5Q==
   dependencies:
-    "@aa-sdk/core" "^4.34.0"
+    "@aa-sdk/core" "^4.35.0"
     "@ethersproject/abi" "^5.7.0"
     "@ethersproject/abstract-signer" "^5.7.0"
     "@ethersproject/bytes" "^5.7.0"
@@ -26,16 +26,16 @@
     "@ethersproject/providers" "^5.7.2"
     "@ethersproject/wallet" "^5.7.0"
 
-"@account-kit/core@^4.34.0", "@account-kit/core@^4.9.0":
-  version "4.34.0"
-  resolved "https://registry.npmjs.org/@account-kit/core/-/core-4.34.0.tgz#c9f14b13b72d1ff77097a5ba55f223abbfbcda0e"
-  integrity sha512-npBS28FzLrc3ky9jHBL8Kw6ZrvrK0yqIJa85xIPSwTHTDGehLCznKTLtjcKlJlcikSGylkazEjq1NFCRA9U7Dw==
+"@account-kit/core@^4.35.0":
+  version "4.35.0"
+  resolved "https://registry.npmjs.org/@account-kit/core/-/core-4.35.0.tgz#0bdabf1688e61dc268e4ab1a46e2ccdd00e4397e"
+  integrity sha512-Ohys+iAlnxJgGhC3RBENaF2pMwAv6FxFsiaJx3Fc7jaASCXQ+/KR/Ei5sQjhqp+Ed1xKVXBzS27E46ECSAvkhA==
   dependencies:
-    "@account-kit/infra" "^4.34.0"
-    "@account-kit/logging" "^4.34.0"
-    "@account-kit/react-native-signer" "^4.34.0"
-    "@account-kit/signer" "^4.34.0"
-    "@account-kit/smart-contracts" "^4.34.0"
+    "@account-kit/infra" "^4.35.0"
+    "@account-kit/logging" "^4.35.0"
+    "@account-kit/react-native-signer" "^4.35.0"
+    "@account-kit/signer" "^4.35.0"
+    "@account-kit/smart-contracts" "^4.35.0"
     "@solana/web3.js" "^1.98.0"
     js-cookie "^3.0.5"
     zod "^3.22.4"
@@ -43,44 +43,44 @@
   optionalDependencies:
     alchemy-sdk "^3.0.0"
 
-"@account-kit/infra@^4.34.0":
-  version "4.34.0"
-  resolved "https://registry.npmjs.org/@account-kit/infra/-/infra-4.34.0.tgz#fc136a50c085473b579f7a40c16770189816672f"
-  integrity sha512-+zztS7ANg4qa0MYl9EuF3tto4U1zVyyWGHXIdY8QXlKobSAHQEhlUMo6jo3RZnz72FiGOoFfyI8j3PUErpjTpA==
+"@account-kit/infra@^4.35.0":
+  version "4.35.0"
+  resolved "https://registry.npmjs.org/@account-kit/infra/-/infra-4.35.0.tgz#f92ce6625702009e5f0eeb433bb7a47e53443222"
+  integrity sha512-kK2qWEi9077dnZwpNfXmWj+eJz4D44Mf4ijgwrcXjG7C1/tP/OM1kcllBPm2gh3fC3h+v49U6fCjHHj9LJ4SCw==
   dependencies:
-    "@aa-sdk/core" "^4.34.0"
-    "@account-kit/logging" "^4.34.0"
+    "@aa-sdk/core" "^4.35.0"
+    "@account-kit/logging" "^4.35.0"
     eventemitter3 "^5.0.1"
     zod "^3.22.4"
   optionalDependencies:
     alchemy-sdk "^3.0.0"
 
-"@account-kit/logging@^4.34.0":
-  version "4.34.0"
-  resolved "https://registry.npmjs.org/@account-kit/logging/-/logging-4.34.0.tgz#6fd2c1ea16f6ea462d9969e1425d5904420b2c12"
-  integrity sha512-7ZZXdBOMMZdbjrYPsDDu91lo4z+YMdqHXMp58wbiBXmgZonI5OnbmWzfmdgC5RdxneZwRp6i4Rii7FGJF9jxwg==
+"@account-kit/logging@^4.35.0":
+  version "4.35.0"
+  resolved "https://registry.npmjs.org/@account-kit/logging/-/logging-4.35.0.tgz#d17f3676d431dc68008bad0f4776bc22bf33190f"
+  integrity sha512-D8VGw3y5W0dVxdo0BBzjZtHAGEVXImWKklrhcNcqppGd/12ENn00t5BI8vjRdzZFiUqor7E2176mA17B2QIZvg==
   dependencies:
     "@segment/analytics-next" "^1.74.0"
     uuid "^11.0.2"
 
-"@account-kit/react-native-signer@^4.34.0":
-  version "4.34.0"
-  resolved "https://registry.npmjs.org/@account-kit/react-native-signer/-/react-native-signer-4.34.0.tgz#f58ae711d6767dd21d5ed48407ff226f98f3ab79"
-  integrity sha512-VchDAtyY3USyqU17ncVTcAHJJWZUp/7JqIWWPNts1NedxEmjfIvVVhn1JHeKEotyOjS0gAMLRZWQckORTLKJ/A==
+"@account-kit/react-native-signer@^4.35.0":
+  version "4.35.0"
+  resolved "https://registry.npmjs.org/@account-kit/react-native-signer/-/react-native-signer-4.35.0.tgz#f6c771a8177838045d8c23db5f4305ff79646495"
+  integrity sha512-aMQfWqTuSVaZtS7WDUTsFezNWrZFX1OEdqVS9hkXrdYHXZu6ienOzl885NjswXlZTsgnchB0v6BxbCUAFVfFoQ==
   dependencies:
-    "@aa-sdk/core" "^4.34.0"
-    "@account-kit/signer" "^4.34.0"
+    "@aa-sdk/core" "^4.35.0"
+    "@account-kit/signer" "^4.35.0"
     viem "^2.21.40"
 
-"@account-kit/react@^4.34.0":
-  version "4.34.0"
-  resolved "https://registry.npmjs.org/@account-kit/react/-/react-4.34.0.tgz#5565f1404f0b1db6f44fbeee4b18b7eae7fa6c9d"
-  integrity sha512-Bib6HAgSEJaoYTNc+WDpkfGE7XAS6YWH+/9XXpwm4g/2NiUoapnkOd1/pOL7BvLEEky7yT4bWohyJBeNMG1kRg==
+"@account-kit/react@^4.35.0":
+  version "4.35.0"
+  resolved "https://registry.npmjs.org/@account-kit/react/-/react-4.35.0.tgz#53769a64ea5ef21b11b972200699e9d01d710267"
+  integrity sha512-jxSenbHlpJ/PKWjtVFDIdCZhs2i30ShfjzY6MPF0o/D45MW9mYtwLbyVtG5RmArfxpNJGU/0UI4Axoj5kphJBQ==
   dependencies:
-    "@account-kit/core" "^4.34.0"
-    "@account-kit/infra" "^4.34.0"
-    "@account-kit/logging" "^4.34.0"
-    "@account-kit/signer" "^4.34.0"
+    "@account-kit/core" "^4.35.0"
+    "@account-kit/infra" "^4.35.0"
+    "@account-kit/logging" "^4.35.0"
+    "@account-kit/signer" "^4.35.0"
     "@solana/web3.js" "^1.98.0"
     "@tanstack/react-form" "^0.33.0"
     "@tanstack/zod-form-adapter" "^0.33.0"
@@ -93,13 +93,13 @@
   optionalDependencies:
     alchemy-sdk "^3.0.0"
 
-"@account-kit/signer@^4.14.0", "@account-kit/signer@^4.34.0":
-  version "4.34.0"
-  resolved "https://registry.npmjs.org/@account-kit/signer/-/signer-4.34.0.tgz#730082466716d0513d71eb7379c2f16c8fdb0da7"
-  integrity sha512-/6ABcw5AMjG7QzwCyJ5djoer+YGWCgIW4BVnKpVfbf2QcEO+7D5zMvZttlV1HSOCkuuS1fo+zl6ZdxSFjPVv1A==
+"@account-kit/signer@^4.35.0":
+  version "4.35.0"
+  resolved "https://registry.npmjs.org/@account-kit/signer/-/signer-4.35.0.tgz#4ffe9d52fe3983ac9204e7b0013cf98ee61bbcbd"
+  integrity sha512-tFvlrdDx/Vp6tltwJFZ4niAyVip9IlEoae2IUi56slo4bSJfvpxlGYC1PJJJ2jFsBYtZzWDCSR9NrbaF8TXcnw==
   dependencies:
-    "@aa-sdk/core" "^4.34.0"
-    "@account-kit/logging" "^4.34.0"
+    "@aa-sdk/core" "^4.35.0"
+    "@account-kit/logging" "^4.35.0"
     "@solana/web3.js" "^1.98.0"
     "@turnkey/http" "^2.22.0"
     "@turnkey/iframe-stamper" "^1.0.0"
@@ -110,13 +110,13 @@
     zod "^3.22.4"
     zustand "^5.0.0-rc.2"
 
-"@account-kit/smart-contracts@^4.34.0":
-  version "4.34.0"
-  resolved "https://registry.npmjs.org/@account-kit/smart-contracts/-/smart-contracts-4.34.0.tgz#e52eb4ce89b6f90eb13a8caa969d98eb4b8c79df"
-  integrity sha512-Qu8zYv1BcWIMJHT0BevDDRlzlIwIFBfsn32n0HS1cg0gccGZHs8Qah2uBOswnjoYPmec8VUtoLHyuKf77wrWJQ==
+"@account-kit/smart-contracts@^4.35.0":
+  version "4.35.0"
+  resolved "https://registry.npmjs.org/@account-kit/smart-contracts/-/smart-contracts-4.35.0.tgz#c8e9737dca56d6db1a9bd43ebb707edd0eaff48a"
+  integrity sha512-+G8wwGJSVJuXNOJX9kMALTwFM/dOc0QqlXp8W5EB8Ou26TxDUmqE42lMh54OYIE1aW2ltKR8OH0Y7riCMrt2wQ==
   dependencies:
-    "@aa-sdk/core" "^4.34.0"
-    "@account-kit/infra" "^4.34.0"
+    "@aa-sdk/core" "^4.35.0"
+    "@account-kit/infra" "^4.35.0"
 
 "@adraffy/ens-normalize@1.10.0":
   version "1.10.0"
