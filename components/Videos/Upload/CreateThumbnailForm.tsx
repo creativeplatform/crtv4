@@ -121,10 +121,26 @@ const CreateThumbnailForm = ({
 
   // Watch NFT config and notify parent on change
   useEffect(() => {
-    if (onNFTConfigChange) {
-      onNFTConfigChange(watch("nftConfig"));
-    }
-  }, [watch("nftConfig"), onNFTConfigChange]);
+    if (!onNFTConfigChange) return;
+    const subscription = watch((value, { name }) => {
+      const config = value.nftConfig;
+      if (
+        (name === "nftConfig" || name?.startsWith("nftConfig.")) &&
+        config &&
+        typeof config.isMintable === "boolean" &&
+        typeof config.maxSupply === "number" &&
+        typeof config.price === "number" &&
+        typeof config.royaltyPercentage === "number"
+      )
+        onNFTConfigChange({
+          isMintable: config.isMintable,
+          maxSupply: config.maxSupply,
+          price: config.price,
+          royaltyPercentage: config.royaltyPercentage,
+        });
+    });
+    return () => subscription.unsubscribe();
+  }, [onNFTConfigChange, watch]);
 
   const handleSelectionChange = (value: string) => {
     setSelectedImage(value);
