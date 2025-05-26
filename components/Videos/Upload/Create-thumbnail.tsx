@@ -15,6 +15,7 @@ import CreateThumbnailForm from "./CreateThumbnailForm";
 import { toast } from "sonner";
 import { NFTConfig } from "@/lib/types/video-asset";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Progress } from "@/components/ui/progress";
 
 type CreateThumbnailProps = {
   livePeerAssetId: string | undefined;
@@ -100,6 +101,8 @@ export default function CreateThumbnail({
         thumbnailUri: selectedThumbnail,
         nftConfig: nftConfig,
       });
+    } else {
+      toast.error("Please select a thumbnail before submitting.");
     }
   };
 
@@ -112,6 +115,27 @@ export default function CreateThumbnail({
         <h3 className="text-lg">
           Video Transcoding: {String(livepeerAssetData?.status?.phase)}
         </h3>
+        {livepeerAssetData?.status?.phase !== "ready" &&
+          livepeerAssetData?.status?.phase !== "failed" &&
+          typeof livepeerAssetData?.status?.progress === "number" && (
+            <div className="mt-4">
+              <Progress
+                value={
+                  livepeerAssetData.status.progress > 1
+                    ? livepeerAssetData.status.progress
+                    : livepeerAssetData.status.progress * 100
+                }
+              />
+              <div className="text-center text-sm mt-1 text-muted-foreground">
+                {Math.round(
+                  livepeerAssetData.status.progress > 1
+                    ? livepeerAssetData.status.progress
+                    : livepeerAssetData.status.progress * 100
+                )}
+                %
+              </div>
+            </div>
+          )}
       </div>
       {livepeerAssetData?.status?.phase !== "ready" && (
         <div className="my-6">
@@ -134,7 +158,10 @@ export default function CreateThumbnail({
         </div>
         <CreateThumbnailForm
           onSelectThumbnailImages={(thumbnailUri: string) => {
-            handleComplete(thumbnailUri);
+            setSelectedThumbnail(thumbnailUri);
+          }}
+          onNFTConfigChange={(config: NFTConfig) => {
+            setNFTConfig(config);
           }}
         />
       </div>

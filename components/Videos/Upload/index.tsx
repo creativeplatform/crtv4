@@ -6,11 +6,10 @@ import { useRouter } from "next/navigation";
 import { FaExclamationTriangle } from "react-icons/fa";
 
 import { toast } from "sonner";
-import { useAccount } from "@account-kit/react";
 import { Asset } from "livepeer/models/components";
 
 import { StepperFormValues } from "@/lib/types/hook-stepper";
-import { useOrbisContext } from "@/lib/sdk/orbisDB/context";
+// import { useOrbisContext } from "@/lib/sdk/orbisDB/context";
 import StepperIndicator from "@/components/Videos/Upload/Stepper-Indicator";
 import FileUpload from "@/components/Videos/Upload/FileUpload";
 import CreateInfo from "@/components/Videos/Upload/Create-info";
@@ -21,15 +20,15 @@ import {
   AssetMetadata,
   createAssetMetadata,
 } from "@/lib/sdk/orbisDB/models/AssetMetadata";
-import { stack } from "@/lib/sdk/stack/stackClient";
-import { db } from "@/lib/sdk/orbisDB/client";
 import {
   updateVideoAssetMintingStatus,
   updateVideoAsset,
 } from "@/services/video-assets";
 import { createVideoAsset } from "@/services/video-assets";
 import type { VideoAsset } from "@/lib/types/video-asset";
-import { useUniversalAccount } from "@/lib/hooks/accountkit/useUniversalAccount";
+// import { useUniversalAccount } from "@/lib/hooks/accountkit/useUniversalAccount";
+import { useSmartAccountClient } from "@account-kit/react";
+import { getLivepeerAsset } from "@/app/api/livepeer/assetUploadActions";
 
 const HookMultiStepForm = () => {
   const [activeStep, setActiveStep] = useState(1);
@@ -45,9 +44,9 @@ const HookMultiStepForm = () => {
   const [thumbnailUri, setThumbnailUri] = useState<string>();
   const [dbAssetId, setDbAssetId] = useState<number | null>(null);
   const [videoAsset, setVideoAsset] = useState<VideoAsset | null>(null);
-  const { isConnected } = useOrbisContext();
 
-  const { address, type, loading } = useUniversalAccount();
+  // const { address, type, loading } = useUniversalAccount();
+  const { address } = useSmartAccountClient({});
 
   const router = useRouter();
 
@@ -147,10 +146,10 @@ const HookMultiStepForm = () => {
           }) => {
             setThumbnailUri(data.thumbnailUri);
 
+            // Ensure all required data is present
             if (!livepeerAsset || !metadata) {
-              throw new Error(
-                "Error saving assetMetadata: Missing asset metadata"
-              );
+              toast.error("Missing asset metadata. Please try again.");
+              return;
             }
 
             if (!address) {
@@ -159,25 +158,30 @@ const HookMultiStepForm = () => {
             }
 
             try {
-              // Update the video asset with thumbnail and NFT config using videoAsset.id
+              // Fetch the latest Livepeer asset to get the most up-to-date metadata_uri
+              const latestAsset = await getLivepeerAsset(livepeerAsset.id);
+              // --- PUBLISH LOGIC ---
+              // This will set the video asset status to 'published' (or 'mintable' if NFT minting is enabled)
               await updateVideoAsset(videoAsset?.id as number, {
                 thumbnailUri: data.thumbnailUri,
                 status: data.nftConfig?.isMintable ? "mintable" : "published",
                 max_supply: data.nftConfig?.maxSupply || null,
                 price: data.nftConfig?.price || null,
                 royalty_percentage: data.nftConfig?.royaltyPercentage || null,
+                metadata_uri:
+                  latestAsset?.storage?.ipfs?.nftMetadata?.url || null,
               });
 
               // Award points for uploading a video
-              await stack.track("video_upload", {
-                account: address,
-                points: 10,
-              });
+              // await stack.track("video_upload", {
+              //   account: address,
+              //   points: 10,
+              // });
 
-              const points = await stack.getPoints(address as string);
-              toast.success("Video uploaded successfully!", {
-                description: `You earned 10 points! Your total balance is now ${points} points.`,
-              });
+              // const points = await stack.getPoints(address as string);
+              // toast.success("Video uploaded and published successfully!", {
+              //   description: `You earned 10 points! Your total balance is now ${points} points.`,
+              // });
 
               router.push("/discover");
             } catch (error) {
