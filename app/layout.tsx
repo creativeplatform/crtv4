@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Creative TV",
     description: "The Way Content Should Be.",
-    images: ["https://tv.creativeplatform.xyz/logo-tv.gif"],
+    images: ["https://tv.creativeplatform.xyz/creative-banner.png"],
   },
 };
 
