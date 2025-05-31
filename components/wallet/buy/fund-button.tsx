@@ -1,10 +1,18 @@
-import React from "react";
-import { Button } from "@/components/ui/button";
+import { useState } from "react";
 import { useWertWidget } from "@wert-io/module-react-component";
 import type {
   GeneralOptions,
   ReactiveOptions,
 } from "@wert-io/module-react-component";
+import {
+  useSigner,
+  useBundlerClient,
+  useSmartAccountClient,
+  useUser,
+} from "@account-kit/react";
+import { AlchemyWebSigner } from "@account-kit/signer";
+import { Button } from "@/components/ui/button";
+import { v4 as uuidv4 } from "uuid";
 
 /*
   In this example we initialize a simple crypto purchase.
@@ -12,42 +20,64 @@ import type {
   please refer to https://www.npmjs.com/package/@wert-io/module-react-component
 */
 
-interface WertButtonProps {
-  onClose?: () => void;
-}
-
-const WertButton: React.FC<WertButtonProps> = ({ onClose }) => {
-  // Here goes the list of all static options. This object is then passed to the open() method
-  const options: GeneralOptions = {
-    partner_id: "01FGKYK638SV618KZHAVEY7P79",
-    origin: "https://sandbox.wert.io", // this option needed only in sandbox
-    commodity: "ETH",
-    network: "base_sepolia",
-  };
-  // The reactive options - listeners and theme-related parameters - are passed to the useWertWidget() hook
-  const [reactiveOptions] = React.useState<ReactiveOptions>({
+function FundButton() {
+  const signer: AlchemyWebSigner | null = useSigner();
+  const bundlerClient = useBundlerClient();
+  const user = useUser();
+  const { address } = useSmartAccountClient({});
+  const [reactiveOptions] = useState<ReactiveOptions>({
+    theme: "dark",
     listeners: {
-      loaded: () => {
-        console.log("loaded");
-        onClose?.();
-      },
+      loaded: () => console.log("loaded"),
     },
   });
-
-  const { open } = useWertWidget(reactiveOptions);
+  const { open: openWertWidget, isWidgetOpen } = useWertWidget(reactiveOptions);
 
   return (
     <Button
-      onClick={() => {
-        // Remove existing Wert iframe if present to prevent duplicate errors
-        const existingIframe = document.getElementById("turnkey-iframe");
-        if (existingIframe) existingIframe.remove();
-        open({ options });
+      onClick={async () => {
+        if (!signer || !address) return;
+        const chainId = 8453;
+        const nonce = await bundlerClient.getTransactionCount({ address });
+
+        const signed = await signer.signAuthorization({
+          address,
+          chainId,
+          nonce,
+        });
+
+        // Concatenate r, s, v to form the signature string
+        // v is a bigint, so convert to hex and pad if needed
+        const vHex = Number(signed.v).toString(16).padStart(2, "0");
+        const signature = `${signed.r}${signed.s}${vHex}`;
+
+        const options: GeneralOptions = {
+          partner_id: "01HSD48HCYJH2SNT65S5A0JYPP",
+          address,
+          network: "base",
+          commodity: "usdc",
+          commodities: JSON.stringify([
+            {
+              commodity: "USDC",
+              network: "base",
+            },
+            {
+              commodity: "ETH",
+              network: "base",
+            },
+          ]),
+          click_id: uuidv4(),
+          email: user?.email,
+          origin: "https://widget.wert.io",
+          signature,
+        };
+        openWertWidget({ options });
+        console.log(isWidgetOpen);
       }}
     >
       Deposit Funds
     </Button>
   );
-};
+}
 
-export default WertButton;
+export default FundButton;
