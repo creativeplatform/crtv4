@@ -309,7 +309,7 @@ export default function Navbar() {
           <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
             <h2 className="text-xl font-bold mb-4">Buy Crypto</h2>
             <p className="mb-4">Purchase crypto directly to your wallet.</p>
-            <WertButton onClose={() => setIsDialogOpen(false)} />
+            <WertButton />
             <div className="flex justify-end">
               <Button onClick={() => setIsDialogOpen(false)}>Close</Button>
             </div>
