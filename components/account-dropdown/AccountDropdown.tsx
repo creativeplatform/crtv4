@@ -73,7 +73,7 @@ import {
   DialogClose,
   DialogDescription,
 } from "@/components/ui/dialog";
-import WertButton from "@/components/wallet/buy/fund-button";
+import CdpFundButton from "@/components/wallet/buy/cdp-fund-button";
 import { LoginButton } from "@/components/auth/LoginButton";
 import useModularAccount from "@/lib/hooks/accountkit/useModularAccount";
 import { TokenBalance } from "@/components/wallet/balance/TokenBalance";
@@ -537,7 +537,7 @@ export function AccountDropdown() {
               Purchase crypto directly to your wallet.
             </p>
             <div className="flex flex-col gap-4">
-              <WertButton />
+              <CdpFundButton />
             </div>
           </div>
         );
@@ -896,6 +896,31 @@ export function AccountDropdown() {
           {/* Membership Section */}
           <div className="px-2 py-2 w-full">
             <MembershipSection />
+          </div>
+
+          <DropdownMenuSeparator />
+
+          {/* Wallet Actions Section */}
+          <div className="px-2 py-2 w-full">
+            <p className="text-xs text-muted-foreground mb-2">Wallet Actions</p>
+            <DropdownMenuItem
+              onClick={() => handleActionClick("buy")}
+              className="w-full flex items-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors p-3 md:p-2"
+            >
+              <Plus className="mr-2 h-4 w-4 text-green-500" /> Buy
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => handleActionClick("send")}
+              className="w-full flex items-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors p-3 md:p-2"
+            >
+              <ArrowUpDown className="mr-2 h-4 w-4 text-blue-500" /> Send
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => handleActionClick("swap")}
+              className="w-full flex items-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors p-3 md:p-2"
+            >
+              <ArrowBigUp className="mr-2 h-4 w-4 text-purple-500" /> Swap
+            </DropdownMenuItem>
           </div>
 
           <DropdownMenuSeparator />

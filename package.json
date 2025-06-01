@@ -20,6 +20,7 @@
     "@account-kit/smart-contracts": "^4.35.0",
     "@apollo/client": "^3.13.8",
     "@apollo/client-integration-nextjs": "^0.12.2",
+    "@coinbase/onchainkit": "^0.38.13",
     "@hookform/resolvers": "^5.0.1",
     "@kreisler/js-google-translate-free": "^4.0.2",
     "@livepeer/ai": "^0.6.2",

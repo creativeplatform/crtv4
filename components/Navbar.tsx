@@ -41,7 +41,7 @@ import useModularAccount from "@/lib/hooks/accountkit/useModularAccount";
 import { createPublicClient, http } from "viem";
 import { alchemy, mainnet, base, optimism } from "@account-kit/infra";
 import { ArrowBigDown, ArrowBigUp } from "lucide-react";
-import WertButton from "./wallet/buy/fund-button";
+import CdpFundButton from "./wallet/buy/cdp-fund-button";
 import { TokenBalance } from "./wallet/balance/TokenBalance";
 import type { Chain as ViemChain } from "viem/chains";
 import { AccountDropdown } from "@/components/account-dropdown/AccountDropdown";
@@ -309,7 +309,7 @@ export default function Navbar() {
           <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
             <h2 className="text-xl font-bold mb-4">Buy Crypto</h2>
             <p className="mb-4">Purchase crypto directly to your wallet.</p>
-            <WertButton />
+            <CdpFundButton />
             <div className="flex justify-end">
               <Button onClick={() => setIsDialogOpen(false)}>Close</Button>
             </div>
