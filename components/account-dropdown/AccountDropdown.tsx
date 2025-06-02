@@ -73,7 +73,7 @@ import {
   DialogClose,
   DialogDescription,
 } from "@/components/ui/dialog";
-import CdpFundButton from "@/components/wallet/buy/cdp-fund-button";
+import WertFundButton from "@/components/wallet/buy/wert-fund-button";
 import { LoginButton } from "@/components/auth/LoginButton";
 import useModularAccount from "@/lib/hooks/accountkit/useModularAccount";
 import { TokenBalance } from "@/components/wallet/balance/TokenBalance";
@@ -537,7 +537,7 @@ export function AccountDropdown() {
               Purchase crypto directly to your wallet.
             </p>
             <div className="flex flex-col gap-4">
-              <CdpFundButton />
+              <WertFundButton />
             </div>
           </div>
         );
